@@ -95,7 +95,7 @@ LexerTableEntry lexerTable[17][128] = {
     /*--[ only accepting delimiters that make sense ]--*/
     [START] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, false }, // DEFAULT TO ERROR
+        ['\0'...'~'] = { ERROR, INVALID, false },
         /*--[RULES]--*/
         ['a'...'z'] = { IN_ID, ID, true },
         ['A'...'Z'] = { IN_ID, ID, true },
@@ -372,7 +372,7 @@ LexerTableEntry lexerTable[17][128] = {
 
 
 
-/*--[ getNextToken - reuses prev buffer for optimization - returns TokenRecord ]--*/
+/*--[ getNextToken - reuses prev buffer for optimization - returns into the token ]--*/
 void getNextToken( Buffer* buffer, FILE * stream, TokenRecord * token ){
 
     char ch;
@@ -386,12 +386,11 @@ void getNextToken( Buffer* buffer, FILE * stream, TokenRecord * token ){
         //adhoc for end of file
         if(ch == EOF){
             token->type = EOF;
-            return;
+            break;
         }
 
         table_entry = lexerTable[table_entry.nextState][ch];
-        
-        
+
         if (table_entry.nextState == DONE && (table_entry.tokenType == COMMENT || table_entry.tokenType == WHITESPACE )){
             table_entry.nextState = START;
             memset(token->lexeme, 0, sizeof token->lexeme); //clean lexeme
@@ -411,15 +410,20 @@ void getNextToken( Buffer* buffer, FILE * stream, TokenRecord * token ){
 
     //in error get the rest of the lexeme
     if(table_entry.nextState == ERROR ){
-        while(table_entry.nextState != DONE && token->type != EOF){
+        while( table_entry.nextState != DONE ){
             ch = getNextChar(buffer, stream);
-            if(ch == EOF) token->type = EOF;
+            if(ch == EOF){
+                token->type = EOF;
+                break;
+            } 
             table_entry = lexerTable[table_entry.nextState][ch];
             token->lexeme[strlen(token->lexeme)] = ch;
             token->lexeme[strlen(token->lexeme)+1] = '\0';
         }
     }
 
+    
+    if((table_entry.tokenType == WHITESPACE) || (table_entry.tokenType == COMMENT) ) table_entry.tokenType = EOF; 
     if(table_entry.tokenType == INVALID ) warn("AN ERROR OCCURED AT %dth LINE IN THE %dth CHAR:\n LEXEME: %s", buffer->line_number, buffer->line_char_pos,token->lexeme );
     
     token->type = table_entry.tokenType;
@@ -450,17 +454,21 @@ int main(int argc, char *argv[]) {
     
     TokenRecord* token = malloc(sizeof(TokenRecord)); 
     
+
+    
     do{
         getNextToken(&buffer, stream, token);
+        if(token->type == EOF){
+            break;
+        }
         if(token->type == INVALID){
             return EXIT_FAILURE;
         }
-        printf("LEXEME:%s ??? TYPE: %d", token->lexeme, token->type);
-        puts(" next ...");
+        printf(GREEN"LEXEME:"RED"%s\t"YELLOW"TYPE: %d\n"RESET, token->lexeme, token->type);
     }while(token->type != EOF);
     
     
-    
+    //cleanup functions
     free(token);
     deallocateBuffer(&buffer);
     fclose(stream);

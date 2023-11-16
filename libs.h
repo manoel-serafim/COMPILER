@@ -10,6 +10,7 @@
 #define RED "\033[31m"
 #define CYN "\033[36m"
 #define YELLOW "\033[33m"
+#define GREEN "\033[0;32m"
 
 /* Functions for printing messages with colors */
 void show(const char* format, ...) {
