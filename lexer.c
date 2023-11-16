@@ -57,10 +57,7 @@ typedef enum {
 
 typedef struct {
     TokenType type;
-    union {
-        char lexeme[LEXEME_SIZE];
-        int numval;
-    } attribute;
+    char lexeme[LEXEME_SIZE];
 } TokenRecord;
 
 
@@ -98,7 +95,7 @@ LexerTableEntry lexerTable[17][128] = {
     /*--[ only accepting delimiters that make sense ]--*/
     [START] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, true }, // DEFAULT TO ERROR
+        ['\0'...'~'] = { ERROR, INVALID, false }, // DEFAULT TO ERROR
         /*--[RULES]--*/
         ['a'...'z'] = { IN_ID, ID, true },
         ['A'...'Z'] = { IN_ID, ID, true },
@@ -122,16 +119,16 @@ LexerTableEntry lexerTable[17][128] = {
         ['}'] = { DONE, CURLYCL_BRACKET, true },
         ['['] = { DONE, SQUAREOP_BRACKET, true },
         [']'] = { DONE, SQUARECL_BRACKET, true },
-        [' '] = { START, WHITESPACE, true },
-        ['\t'] = { START, WHITESPACE, true },
-        ['\n'] = { START, WHITESPACE, true }
+        [' '] = { DONE, WHITESPACE, true },
+        ['\t'] = { DONE, WHITESPACE, true },
+        ['\n'] = { DONE, WHITESPACE, true }
 
     },
 
     // IN_ID state
     [IN_ID] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, true },
+        ['\0'...'~'] = { ERROR, INVALID, false },
 
         /*--[RULES]--*/
         ['a'...'z'] = { IN_ID, ID, true },
@@ -173,7 +170,7 @@ LexerTableEntry lexerTable[17][128] = {
     // IN_NUM state
     [IN_NUM] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, true },
+        ['\0'...'~'] = { ERROR, INVALID, false },
 
         /*--[RULES]--*/
         ['0'...'9'] = { IN_NUM, NUM, true },
@@ -209,7 +206,7 @@ LexerTableEntry lexerTable[17][128] = {
     // IN_DIV_OR_COMM 
     [IN_DIV_OR_COMM] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, true }, 
+        ['\0'...'~'] = { ERROR, INVALID, false }, 
 
         /*--[RULES]--*/
         ['*'] = { IN_COMMENT, COMMENT, true },
@@ -242,7 +239,7 @@ LexerTableEntry lexerTable[17][128] = {
         ['\0'...'~'] = { IN_COMMENT, COMMENT, true },
 
         /*--[RULES]--*/
-        ['/'] = { START, COMMENT, true }, // Go back to initial state to get the next token
+        ['/'] = { DONE, COMMENT, true }, // Go back to initial state to get the next token
         ['*'] = { IN_BLOCK_COMMENT, COMMENT, true },
 
     },
@@ -250,7 +247,7 @@ LexerTableEntry lexerTable[17][128] = {
     // IN_LESS_OR_LEQ state
     [IN_LESS_OR_LEQ] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, true },
+        ['\0'...'~'] = { ERROR, INVALID, false },
 
         /*--[RULES]--*/
         ['='] = { DONE, LESSEQ_RELOP, true },
@@ -272,7 +269,7 @@ LexerTableEntry lexerTable[17][128] = {
     // IN_LESS_OR_LEQ state
     [IN_GREAT_OR_GEQ] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, true },
+        ['\0'...'~'] = { ERROR, INVALID, false },
 
         /*--[RULES]--*/
         ['='] = { DONE, GREATEQ_RELOP, true },
@@ -294,7 +291,7 @@ LexerTableEntry lexerTable[17][128] = {
     // IN_EQRELOP
     [IN_EQ_OR_EQRELOP] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, true },
+        ['\0'...'~'] = { ERROR, INVALID, false },
 
         /*--[RULES]--*/
         ['='] = { DONE, EQ_RELOP, true },
@@ -317,7 +314,7 @@ LexerTableEntry lexerTable[17][128] = {
 
     [IN_NOTRELOP] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, true },
+        ['\0'...'~'] = { ERROR, INVALID, false },
 
         /*--[RULES]--*/
         ['='] = { DONE, NOTEQ_RELOP, true },
@@ -331,47 +328,101 @@ LexerTableEntry lexerTable[17][128] = {
     },
     // DONE state
     [DONE] = {},
-    [ERROR]= {}
+    [ERROR]= {
+        /*--[GET THE REST OF THE LEXEME]--*/
+        /*--[DEFAULTING TO STAY IN ERROR]--*/
+        ['\0'...'~'] = { ERROR, INVALID, true },
+
+        /*--[DELIMITERS-error]--*/
+        ['a'...'z'] = { DONE, INVALID, true },
+        ['A'...'Z'] = { DONE, INVALID, true },
+        ['0'...'9'] = { DONE, INVALID, true },
+        ['_'] = { DONE, INVALID, true },
+        ['$'] = { DONE, INVALID, true },
+        //arithmetic
+        ['+'] = { DONE, INVALID, true }, 
+        ['-'] = { DONE, INVALID, true }, 
+        ['*'] = { DONE, INVALID, true },
+        ['/'] = { DONE, INVALID, true },
+        //relational 
+        ['<'] = { DONE, INVALID, true }, 
+        ['>'] = { DONE, INVALID, true }, 
+        ['='] = { DONE, INVALID, true }, 
+        ['!'] = { DONE, INVALID, true },
+        //ponctual 
+        [';'] = { DONE, INVALID, true },
+        [','] = { DONE, INVALID, true },
+        //macros
+        ['"'] = { DONE, INVALID, true },
+        //in/out functions/arrays
+        ['('] = { DONE, INVALID, true },
+        [')'] = { DONE, INVALID, true },
+        ['{'] = { DONE, INVALID, true },
+        ['}'] = { DONE, INVALID, true },
+        ['['] = { DONE, INVALID, true },
+        [']'] = { DONE, INVALID, true },
+        //whitespace
+        [' '] = { DONE, INVALID, true },
+        ['\t'] ={ DONE, INVALID, true },
+        ['\n'] ={ DONE, INVALID, true }
+
+
+    }
 };
 
 
 
 /*--[ getNextToken - reuses prev buffer for optimization - returns TokenRecord ]--*/
-TokenRecord getNextToken( Buffer* buffer, FILE * stream ){
+void getNextToken( Buffer* buffer, FILE * stream, TokenRecord * token ){
 
     char ch;
-    TokenRecord token;
-    LexerTableEntry table_entry = { START, -1, false };
+    LexerTableEntry table_entry = { START, -1, true };
+    memset(token->lexeme, 0, sizeof token->lexeme); //clean lexeme
 
+    
     while( table_entry.nextState != DONE && table_entry.nextState != ERROR ){ 
-        
-        ch = getNextChar(buffer, stream);
 
+        ch = getNextChar(buffer, stream);
         //adhoc for end of file
         if(ch == EOF){
-            token.type = EOF;
-            return token;
+            token->type = EOF;
+            return;
         }
-        
-        table_entry = lexerTable[table_entry.nextState][ch];
 
-        //if should not consume, go back one pos in buffer->position
-        if( !table_entry.shouldConsume ) {
+        table_entry = lexerTable[table_entry.nextState][ch];
+        
+        
+        if (table_entry.nextState == DONE && (table_entry.tokenType == COMMENT || table_entry.tokenType == WHITESPACE )){
+            table_entry.nextState = START;
+            memset(token->lexeme, 0, sizeof token->lexeme); //clean lexeme
+            continue;
+        }
+
+        //if this whas a lookahead , do not consume it
+        if( table_entry.shouldConsume == false ) {
             buffer->position--;
+            buffer->line_char_pos--;
         }else{
-            //populate attributes
-            if(isalpha(ch)){
-                strcat(token.attribute.lexeme, &ch);
-            }else if(isdigit(ch)){
-                intcat(&(token.attribute.numval), ch);
-            }
+            token->lexeme[strlen(token->lexeme)] = ch;
+            token->lexeme[strlen(token->lexeme)+1] = '\0';
         }
 
     }
-    if(table_entry.nextState == ERROR ) warn("AN ERROR OCCURED AT LINE: %d IN THE %dth CHAR:\n", buffer->line_number, buffer->line_char_pos);
+
+    //in error get the rest of the lexeme
+    if(table_entry.nextState == ERROR ){
+        while(table_entry.nextState != DONE && token->type != EOF){
+            ch = getNextChar(buffer, stream);
+            if(ch == EOF) token->type = EOF;
+            table_entry = lexerTable[table_entry.nextState][ch];
+            token->lexeme[strlen(token->lexeme)] = ch;
+            token->lexeme[strlen(token->lexeme)+1] = '\0';
+        }
+    }
+
+    if(table_entry.tokenType == INVALID ) warn("AN ERROR OCCURED AT %dth LINE IN THE %dth CHAR:\n LEXEME: %s", buffer->line_number, buffer->line_char_pos,token->lexeme );
     
-    token.type = table_entry.tokenType;
-    return token;
+    token->type = table_entry.tokenType;
 
     
 
@@ -397,19 +448,20 @@ int main(int argc, char *argv[]) {
     allocateBuffer(&buffer, stream);
 
     
-    TokenRecord token; 
+    TokenRecord* token = malloc(sizeof(TokenRecord)); 
     
     do{
-        token = getNextToken(&buffer, stream);
-        if(token.type == INVALID){
+        getNextToken(&buffer, stream, token);
+        if(token->type == INVALID){
             return EXIT_FAILURE;
         }
-        sucs("%d", token.type);
-    }while(token.type != EOF);
+        printf("LEXEME:%s ??? TYPE: %d", token->lexeme, token->type);
+        puts(" next ...");
+    }while(token->type != EOF);
     
     
     
-    
+    free(token);
     deallocateBuffer(&buffer);
     fclose(stream);
 

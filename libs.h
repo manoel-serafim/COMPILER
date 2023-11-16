@@ -128,3 +128,25 @@ int intcat(int* infix, char posfix) {
     *infix = atoi(holder); 
     free(holder);
 } 
+
+void indicateError(Buffer* buffer){
+
+    warn("AN ERROR OCCURRED AT LINE: %zu IN THE %zu-th CHAR:\n", buffer->line_number, buffer->line_char_pos);
+        
+    // Print the actual line
+    size_t line_start = 0;
+    while (line_start < buffer->loaded_size && buffer->data[line_start] != '\n') {
+        line_start++;
+    }
+    
+    size_t line_end = line_start + 1;
+    while (line_end < buffer->loaded_size && buffer->data[line_end] != '\n') {
+        line_end++;
+    }
+    // Print the error line
+    for (size_t i = line_start; i < line_end; ++i) {
+        putchar(buffer->data[i]);
+    }
+    putchar('\n');
+    
+}
