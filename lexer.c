@@ -48,7 +48,7 @@ typedef enum {
     COMMA_PUNCT,
     
     // Special
-    ERROR,
+    INVALID,
     WHITESPACE,          
     COMMENT,
     STRING
@@ -58,7 +58,7 @@ typedef enum {
 typedef struct {
     TokenType type;
     union {
-        char* lexeme;
+        char lexeme[LEXEME_SIZE];
         int numval;
     } attribute;
 } TokenRecord;
@@ -81,7 +81,8 @@ typedef enum {
     IN_NOTRELOP,
     OUT_NOTRELOP,
     IN_STRING,
-    DONE
+    DONE,
+    ERROR
 } LexerState;
 
 // Define the lexer table
@@ -93,13 +94,12 @@ typedef struct {
 
 // 128 because of the 128 ASCII chars
 /*--[ LexTable - using meaningfull vars not only ints ]--*/
-LexerTableEntry lexerTable[16][128] = { 
-    /*--[TODO]--*/
-    /*recheck each delimiter for all of the chars possible*/
-    /*recheck null input chars*/
-    // START state
+LexerTableEntry lexerTable[17][128] = { 
+    /*--[ only accepting delimiters that make sense ]--*/
     [START] = {
-        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        /*--[DEFAULTING TO ERROR]--*/
+        ['\0'...'~'] = { ERROR, INVALID, true }, // DEFAULT TO ERROR
+        /*--[RULES]--*/
         ['a'...'z'] = { IN_ID, ID, true },
         ['A'...'Z'] = { IN_ID, ID, true },
         ['_'] = { IN_ID, ID, true },
@@ -124,124 +124,254 @@ LexerTableEntry lexerTable[16][128] = {
         [']'] = { DONE, SQUARECL_BRACKET, true },
         [' '] = { START, WHITESPACE, true },
         ['\t'] = { START, WHITESPACE, true },
-        ['\n'] = { START, WHITESPACE, true },
+        ['\n'] = { START, WHITESPACE, true }
+
     },
+
     // IN_ID state
     [IN_ID] = {
-        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        /*--[DEFAULTING TO ERROR]--*/
+        ['\0'...'~'] = { ERROR, INVALID, true },
+
+        /*--[RULES]--*/
         ['a'...'z'] = { IN_ID, ID, true },
         ['A'...'Z'] = { IN_ID, ID, true },
         ['0'...'9'] = { IN_ID, ID, true },
         ['_'] = { IN_ID, ID, true },
         ['$'] = { IN_ID, ID, true },
-        [' '|'\t'|'\n'| '='| '['| ';'| '('| '<'| '>'| '+'| '-'| '*'| '/'| '|'| ')'| ']'| '!'] = { DONE, ID, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['\0'] = { DONE, ID, false } // IF FILE ONLY HAS AN ID
+
+        /*--[DELIMITERS-identifier]--*/
+        //arithmetic
+        ['+'] = { DONE, ID, false }, 
+        ['-'] = { DONE, ID, false }, 
+        ['*'] = { DONE, ID, false },
+        ['/'] = { DONE, ID, false },
+        //relational 
+        ['<'] = { DONE, ID, false }, 
+        ['>'] = { DONE, ID, false }, 
+        ['='] = { DONE, ID, false }, 
+        ['!'] = { DONE, ID, false },
+        //ponctual 
+        [';'] = { DONE, ID, false },
+        [','] = { DONE, ID, false },
+        //macros
+        ['"'] = { DONE, ID, false },
+        //in/out functions/arrays
+        ['('] = { DONE, ID, false },
+        [')'] = { DONE, ID, false },
+        ['{'] = { DONE, ID, false },
+        ['}'] = { DONE, ID, false },
+        ['['] = { DONE, ID, false },
+        [']'] = { DONE, ID, false },
+        //whitespace
+        [' '] = { DONE, ID, false },
+        ['\t'] ={ DONE, ID, false },
+        ['\n'] ={ DONE, ID, false }
+
     },
+
     // IN_NUM state
     [IN_NUM] = {
-        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
-        ['0'...'9'] = { IN_NUM, NUM, true },
-        [' '| '\t'| '\n'| '\0'| '='| ';'| '+'| '-'| '*'| '/'| '|'| ']'] = { DONE, NUM, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['\0'] = { DONE, ERROR, false } // CATCH-ALL OTHERS
-    },
-    // IN_DIV_OR_COMM
-    [IN_DIV_OR_COMM] = {
-        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
-        ['*'] = { IN_COMMENT, COMMENT, true },
-        ['0'...'9'] = { DONE, DIV_PRE_ALOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['a'...'z'] = { DONE, DIV_PRE_ALOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['A'...'Z'] = { DONE, DIV_PRE_ALOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '/'| '|'| ')'| ']'| '!'] = { DONE, DIV_PRE_ALOP, false } // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        /*--[DEFAULTING TO ERROR]--*/
+        ['\0'...'~'] = { ERROR, INVALID, true },
 
+        /*--[RULES]--*/
+        ['0'...'9'] = { IN_NUM, NUM, true },
+
+        /*--[DELIMITERS-number]--*/
+        //arithmetic
+        ['+'] = { DONE, NUM, false }, 
+        ['-'] = { DONE, NUM, false }, 
+        ['*'] = { DONE, NUM, false },
+        ['/'] = { DONE, NUM, false },
+        //relational 
+        ['<'] = { DONE, NUM, false }, 
+        ['>'] = { DONE, NUM, false }, 
+        ['='] = { DONE, NUM, false }, 
+        ['!'] = { DONE, NUM, false },
+        //ponctual 
+        [';'] = { DONE, NUM, false },
+        [','] = { DONE, NUM, false },
+        //in/out functions/arrays
+        //['('] = { DONE, ID, false },
+        [')'] = { DONE, NUM, false },
+        //['{'] = { DONE, ID, false },
+        ['}'] = { DONE, NUM, false },
+        //['['] = { DONE, ID, false },
+        [']'] = { DONE, NUM, false },
+        //whitespace
+        [' '] = { DONE, NUM, false },
+        ['\t'] ={ DONE, NUM, false },
+        ['\n'] ={ DONE, NUM, false }
+
+    },
+
+    // IN_DIV_OR_COMM 
+    [IN_DIV_OR_COMM] = {
+        /*--[DEFAULTING TO ERROR]--*/
+        ['\0'...'~'] = { ERROR, INVALID, true }, 
+
+        /*--[RULES]--*/
+        ['*'] = { IN_COMMENT, COMMENT, true },
+
+        /*--[DELIMITERS-division]--*/
+        //alphanumerical
+        ['0'...'9'] = { DONE, DIV_PRE_ALOP, false }, 
+        ['a'...'z'] = { DONE, DIV_PRE_ALOP, false }, 
+        ['A'...'Z'] = { DONE, DIV_PRE_ALOP, false }, 
+        ['_'] = { IN_ID, DIV_PRE_ALOP, false },
+        ['$'] = { IN_ID, DIV_PRE_ALOP, false },
+        //whitespace
+        [' '] = { DONE, DIV_PRE_ALOP, false },
+        ['\t'] ={ DONE, DIV_PRE_ALOP, false },
+        ['\n'] ={ DONE, DIV_PRE_ALOP, false }
+        
     },
     // IN_COMMENT state
     [IN_COMMENT] = {
-        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        /*--[DEFAULTING TO STAY FOR ALL CHARS]--*/
+        ['\0'...'~'] = { IN_COMMENT, COMMENT, true },
+
+        /*--[RULES]--*/
         ['*'] = { IN_BLOCK_COMMENT, COMMENT, true },
-        ['0'...'9'] = { IN_COMMENT, COMMENT, true }, // STAY FOR ALLCHAR
-        ['a'...'z'] = { IN_COMMENT, COMMENT, true }, // STAY FOR ALLCHAR
-        ['A'...'Z'] = { IN_COMMENT, COMMENT, true }, // STAY FOR ALLCHAR
-        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '/'| '|'| ')'| ']'| '!'] = { IN_COMMENT, COMMENT, true } // STAY FOR ALLCHAR
+        
     },
     // IN_BLOCK_COMMENT state
     [IN_BLOCK_COMMENT] = {
-        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        /*--[DEFAULTING TO GO BACK FOR ALL CHARS]--*/
+        ['\0'...'~'] = { IN_COMMENT, COMMENT, true },
+
+        /*--[RULES]--*/
         ['/'] = { START, COMMENT, true }, // Go back to initial state to get the next token
         ['*'] = { IN_BLOCK_COMMENT, COMMENT, true },
-        ['0'...'9'] = { IN_COMMENT, COMMENT, true }, // GOBACK FOR ALLCHAR
-        ['a'...'z'] = { IN_COMMENT, COMMENT, true }, // GOBACK FOR ALLCHAR
-        ['A'...'Z'] = { IN_COMMENT, COMMENT, true }, // GOBACK FOR ALLCHAR
-        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'] = { IN_COMMENT, COMMENT, true } // GOBACK FOR ALLCHAR
+
     },
+
     // IN_LESS_OR_LEQ state
     [IN_LESS_OR_LEQ] = {
-        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        /*--[DEFAULTING TO ERROR]--*/
+        ['\0'...'~'] = { ERROR, INVALID, true },
+
+        /*--[RULES]--*/
         ['='] = { DONE, LESSEQ_RELOP, true },
-        ['0'...'9'] = { DONE, LESS_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['a'...'z'] = { DONE, LESS_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['A'...'Z'] = { DONE, LESS_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'|'/'|'*'] = { DONE, LESS_RELOP, false } // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+
+        /*--[DELIMITERS-less]--*/
+        //alfabethical
+        ['a'...'z'] = { DONE, LESS_RELOP, false },
+        ['A'...'Z'] = { DONE, LESS_RELOP, false },
+        ['0'...'9'] = { DONE, LESS_RELOP, false },
+        ['_'] = { DONE, LESS_RELOP, false },
+        ['$'] = { DONE, LESS_RELOP, false },
+        //string relational
+        ['"'] = { DONE, LESS_RELOP, false },
+        //whitespace
+        [' '] = { DONE, LESS_RELOP, false },
+        ['\t'] ={ DONE, LESS_RELOP, false },
+        ['\n'] ={ DONE, LESS_RELOP, false }
     },
     // IN_LESS_OR_LEQ state
     [IN_GREAT_OR_GEQ] = {
-        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        /*--[DEFAULTING TO ERROR]--*/
+        ['\0'...'~'] = { ERROR, INVALID, true },
+
+        /*--[RULES]--*/
         ['='] = { DONE, GREATEQ_RELOP, true },
-        ['0'...'9'] = { DONE, GREAT_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['a'...'z'] = { DONE, GREAT_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['A'...'Z'] = { DONE, GREAT_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'|'/'|'*'] = { DONE, GREAT_RELOP, false } // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+
+        /*--[DELIMITERS-grater]--*/
+        //alfabethical
+        ['a'...'z'] = { DONE, GREAT_RELOP, false },
+        ['A'...'Z'] = { DONE, GREAT_RELOP, false },
+        ['0'...'9'] = { DONE, GREAT_RELOP, false },
+        ['_'] = { DONE, GREAT_RELOP, false },
+        ['$'] = { DONE, GREAT_RELOP, false },
+        //string relational
+        ['"'] = { DONE, GREAT_RELOP, false },
+        //whitespace
+        [' '] = { DONE, GREAT_RELOP, false },
+        ['\t'] ={ DONE, GREAT_RELOP, false },
+        ['\n'] ={ DONE, GREAT_RELOP, false }
     },
     // IN_EQRELOP
     [IN_EQ_OR_EQRELOP] = {
-        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        /*--[DEFAULTING TO ERROR]--*/
+        ['\0'...'~'] = { ERROR, INVALID, true },
+
+        /*--[RULES]--*/
         ['='] = { DONE, EQ_RELOP, true },
-        ['0'...'9'] = { DONE, EQUAL, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['a'...'z'] = { DONE, EQUAL, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['A'...'Z'] = { DONE, EQUAL, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'|'/'|'*'] = { DONE, EQUAL, false } // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        
+        /*--[DELIMITERS-equal]--*/
+        //alfabethical
+        ['a'...'z'] = { DONE, EQUAL, false },
+        ['A'...'Z'] = { DONE, EQUAL, false },
+        ['0'...'9'] = { DONE, EQUAL, false },
+        ['_'] = { DONE, EQUAL, false },
+        ['$'] = { DONE, EQUAL, false },
+        //string relational
+        ['"'] = { DONE, EQUAL, false },
+        //whitespace
+        [' '] = { DONE, EQUAL, false },
+        ['\t'] ={ DONE, EQUAL, false },
+        ['\n'] ={ DONE, EQUAL, false }
+
     },
+
     [IN_NOTRELOP] = {
-        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
-        ['='] = { DONE, NOTEQ_RELOP, false },
-        ['0'...'9'] = { DONE, ERROR, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['a'...'z'] = { DONE, ERROR, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['A'...'Z'] = { DONE, ERROR, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'|'/'|'*'] = { DONE, ERROR, false } // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        /*--[DEFAULTING TO ERROR]--*/
+        ['\0'...'~'] = { ERROR, INVALID, true },
+
+        /*--[RULES]--*/
+        ['='] = { DONE, NOTEQ_RELOP, true },
+        
     },
     [IN_STRING] = {
-        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        /*--[DEFAULTING TO IN_STRING]--*/
+        ['\0'...'~'] = { IN_STRING, STRING, true },
         ['"'] = { DONE, STRING, true },
-        ['0'...'9'] = { IN_STRING, STRING, true }, // STAY IN STR
-        ['a'...'z'] = { IN_STRING, STRING, true }, // STAY IN STR
-        ['A'...'Z'] = { IN_STRING, STRING, true }, // STAY IN STR
-        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'|'/'|'*'] = { IN_STRING, STRING, true } // STAY IN STR
+
     },
     // DONE state
-    [DONE] = {}
+    [DONE] = {},
+    [ERROR]= {}
 };
 
 
-/*--[ getNextChar - returns next char in buffer ]--*/
 
-/*--[ getNextToken - reuses prev buffer for optimization - returns TokenType ]--*/
-TokenType getNextToken( Buffer buffer, FILE * stream ){
+/*--[ getNextToken - reuses prev buffer for optimization - returns TokenRecord ]--*/
+TokenRecord getNextToken( Buffer* buffer, FILE * stream ){
 
     char ch;
-    TokenType token_type;
+    TokenRecord token;
     LexerTableEntry table_entry = { START, -1, false };
 
-    while( table_entry.nextState != DONE && table_entry.tokenType != ERROR){ 
+    while( table_entry.nextState != DONE && table_entry.nextState != ERROR ){ 
         
-        ch = getNextChar(&buffer, stream);
+        ch = getNextChar(buffer, stream);
+
+        //adhoc for end of file
+        if(ch == EOF){
+            token.type = EOF;
+            return token;
+        }
+        
         table_entry = lexerTable[table_entry.nextState][ch];
 
         //if should not consume, go back one pos in buffer->position
-        if( !table_entry.shouldConsume ) buffer.position-- ;
+        if( !table_entry.shouldConsume ) {
+            buffer->position--;
+        }else{
+            //populate attributes
+            if(isalpha(ch)){
+                strcat(token.attribute.lexeme, &ch);
+            }else if(isdigit(ch)){
+                intcat(&(token.attribute.numval), ch);
+            }
+        }
 
     }
-    if(table_entry.tokenType == ERROR ) warn("AN ERROR OCCURED AT LINE: %d IN THE %dth CHAR:\n", buffer.line_number, buffer.line_char_pos);
+    if(table_entry.nextState == ERROR ) warn("AN ERROR OCCURED AT LINE: %d IN THE %dth CHAR:\n", buffer->line_number, buffer->line_char_pos);
     
-    return table_entry.tokenType;
+    token.type = table_entry.tokenType;
+    return token;
 
     
 
@@ -266,19 +396,24 @@ int main(int argc, char *argv[]) {
     Buffer buffer;
     allocateBuffer(&buffer, stream);
 
-    int token_type = getNextToken(buffer, stream);
-    printf("%d", token_type);
+    
+    TokenRecord token; 
+    
+    do{
+        token = getNextToken(&buffer, stream);
+        if(token.type == INVALID){
+            return EXIT_FAILURE;
+        }
+        sucs("%d", token.type);
+    }while(token.type != EOF);
+    
+    
+    
     
     deallocateBuffer(&buffer);
-    
-
-
-    
-    
-    //closing stream
     fclose(stream);
 
 
 
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -1,8 +1,9 @@
 #include <stdio.h>      //io
 #include <errno.h>      //error handeling
-#include <string.h>     //string operations 
+#include <string.h>     //string operations (strcat)
 #include <stdarg.h>     //used for messaging
 #include <stdbool.h>    //bool type
+#include <ctype.h>      //isalpha and isdigit
 
 //ANSI colors
 #define RESET "\033[0m"
@@ -47,6 +48,7 @@ void warn(const char* format, ...) {
 }
 
 #define BUFF_SIZE 256
+#define LEXEME_SIZE 256
 
 
 #include <stdio.h>
@@ -88,7 +90,7 @@ void deallocateBuffer(Buffer *buffer) {
 }
 
 
-
+/*--[ getNextChar - returns next char in buffer and manage its memory ]--*/
 char getNextChar(Buffer *buffer, FILE* file) {
 
     char current_char = buffer->data[buffer->position];
@@ -111,7 +113,18 @@ char getNextChar(Buffer *buffer, FILE* file) {
     return current_char;
 }
 
-void resetBuffer(Buffer *buffer) {
-    buffer->position = 0;
-    buffer->line_number = 0;
-}
+int intcat(int* infix, char posfix) { 
+
+    int num_digits = snprintf(NULL, 0, "%d", *infix);
+    char* holder = (char*)malloc((num_digits + 2) * sizeof(char));
+    if (holder == NULL) {
+        perror(RED"malloc() error"YELLOW);
+        exit(EXIT_FAILURE);
+    }
+    
+    sprintf(holder, "%d", *infix); 
+    strcat(holder, &posfix);
+
+    *infix = atoi(holder); 
+    free(holder);
+} 
