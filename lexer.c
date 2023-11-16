@@ -1,58 +1,8 @@
 /*
-    LEXER
+    TABLE-DRIVEN LEXER
 */
 
-
-#include <stdio.h>      //io
-#include <errno.h>      //error handeling
-#include <string.h>     //string operations 
-#include <stdarg.h>     //used for messaging
-#include <stdbool.h>    //bool type
-
-//ANSI colors
-#define RESET "\033[0m"
-#define RED "\033[31m"
-#define CYN "\033[36m"
-#define YELLOW "\033[33m"
-
-/* Functions for printing messages with colors */
-void show(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    puts(NULL);
-    va_end(args);
-}
-
-void sucs(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    printf(CYN "[+] ");
-    vprintf(format, args);
-    puts(RESET);
-    va_end(args);
-}
-
-void info(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    printf(YELLOW "[*] ");
-    vprintf(format, args);
-    puts(RESET);
-    va_end(args);
-}
-
-void warn(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    printf(RED "[-] ");
-    vprintf(format, args);
-    puts(RESET);
-    va_end(args);
-}
-
-
-//LIBEND
+#include "libs.h"
 
 typedef enum {
     // Identifiers
@@ -124,6 +74,12 @@ typedef enum {
     IN_BLOCK_COMMENT,
     IN_LESS_OR_LEQ,
     IN_LEQ,
+    IN_GREAT_OR_GEQ,
+    IN_GEQ,
+    IN_EQ_OR_EQRELOP,
+    IN_EQRELOP,
+    IN_NOTRELOP,
+    OUT_NOTRELOP,
     IN_STRING,
     DONE
 } LexerState;
@@ -132,54 +88,66 @@ typedef enum {
 typedef struct {
     LexerState nextState;
     TokenType tokenType;
-    bool shouldConsume;
+    bool shouldConsume; // Should advance input?
 } LexerTableEntry;
 
 // 128 because of the 128 ASCII chars
-/*  [LexTable - using meaningfull vars not only ints]  */
-LexerTableEntry lexerTable[200][128] = { 
+/*--[ LexTable - using meaningfull vars not only ints ]--*/
+LexerTableEntry lexerTable[16][128] = { 
+    /*--[TODO]--*/
+    /*recheck each delimiter for all of the chars possible*/
+    /*recheck null input chars*/
     // START state
     [START] = {
+        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
         ['a'...'z'] = { IN_ID, ID, true },
         ['A'...'Z'] = { IN_ID, ID, true },
+        ['_'] = { IN_ID, ID, true },
+        ['$'] = { IN_ID, ID, true },
         ['0'...'9'] = { IN_NUM, NUM, true },
-        ['/'] = { IN_DIV_OR_COMM, DIV_PRE_ALOP, false }, //NO LOOKAHEAD STATE
-        ['+'] = { DONE, PLUS_ALOP, false }, //NO LOOKAHEAD
-        ['-'] = { DONE, MINUS_ALOP, false }, //NO LOOKAHEAD
-        ['*'] = { DONE, MULT_PRE_ALOP, false }, //NO LOOKAHEAD
-        ['<'] = { IN_LESS_OR_LEQ, LESS_RELOP, false }, //NO LOOKAHEAD STATE
-        ['>'] = { DONE, GREATEQ_RELOP, false }, //NO LOOKAHEAD STATE
-        ['='] = { DONE, EQ_RELOP, false }, //NO LOOKAHEAD STATE
-        ['!'] = { DONE, SQUARECL_BRACKET, true },
-        [';'] = { DONE, SEMICOL_PUNCT, true }, //NO LOOKAHEAD
+        ['/'] = { IN_DIV_OR_COMM, DIV_PRE_ALOP, true }, 
+        ['+'] = { DONE, PLUS_ALOP, true }, 
+        ['-'] = { DONE, MINUS_ALOP, true }, 
+        ['*'] = { DONE, MULT_PRE_ALOP, true }, 
+        ['<'] = { IN_LESS_OR_LEQ, LESS_RELOP, true }, 
+        ['>'] = { IN_GREAT_OR_GEQ, GREAT_RELOP, true }, 
+        ['='] = { IN_EQ_OR_EQRELOP, EQUAL, true }, 
+        ['!'] = { IN_NOTRELOP, NOTEQ_RELOP, true }, //NO LOOKAHEAD STATE
+        [';'] = { DONE, SEMICOL_PUNCT, true }, //NO LOOKAHEAD 
         [','] = { DONE, COMMA_PUNCT, true }, //NO LOOKAHEAD
-        ['"'] = { IN_STRING, STRING, false },
+        ['"'] = { IN_STRING, STRING, true }, // NO LOOKAHEAD STATE
         ['('] = { DONE, CIRCLEOP_BRACKET, true }, 
         [')'] = { DONE, CIRCLECL_BRACKET, true },
         ['{'] = { DONE, CURLYOP_BRACKET, true },
         ['}'] = { DONE, CURLYCL_BRACKET, true },
         ['['] = { DONE, SQUAREOP_BRACKET, true },
         [']'] = { DONE, SQUARECL_BRACKET, true },
-        [' '|'\t'|'\n'] = { START, WHITESPACE, true }
+        [' '] = { START, WHITESPACE, true },
+        ['\t'] = { START, WHITESPACE, true },
+        ['\n'] = { START, WHITESPACE, true },
     },
     // IN_ID state
     [IN_ID] = {
+        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
         ['a'...'z'] = { IN_ID, ID, true },
         ['A'...'Z'] = { IN_ID, ID, true },
         ['0'...'9'] = { IN_ID, ID, true },
-        ['_'|'$'] = { IN_ID, ID, true },
+        ['_'] = { IN_ID, ID, true },
+        ['$'] = { IN_ID, ID, true },
         [' '|'\t'|'\n'| '='| '['| ';'| '('| '<'| '>'| '+'| '-'| '*'| '/'| '|'| ')'| ']'| '!'] = { DONE, ID, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['\0'] = { DONE, ERROR, false } // CATCH-ALL OTHERS
+        ['\0'] = { DONE, ID, false } // IF FILE ONLY HAS AN ID
     },
     // IN_NUM state
     [IN_NUM] = {
+        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
         ['0'...'9'] = { IN_NUM, NUM, true },
         [' '| '\t'| '\n'| '\0'| '='| ';'| '+'| '-'| '*'| '/'| '|'| ']'] = { DONE, NUM, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
-        ['0'] = { DONE, ERROR, false } // CATCH-ALL OTHERS
+        ['\0'] = { DONE, ERROR, false } // CATCH-ALL OTHERS
     },
     // IN_DIV_OR_COMM
     [IN_DIV_OR_COMM] = {
-        ['*'] = { IN_COMMENT, COMMENT, false },
+        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        ['*'] = { IN_COMMENT, COMMENT, true },
         ['0'...'9'] = { DONE, DIV_PRE_ALOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
         ['a'...'z'] = { DONE, DIV_PRE_ALOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
         ['A'...'Z'] = { DONE, DIV_PRE_ALOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
@@ -188,35 +156,96 @@ LexerTableEntry lexerTable[200][128] = {
     },
     // IN_COMMENT state
     [IN_COMMENT] = {
-        ['*'] = { IN_BLOCK_COMMENT, COMMENT, false },
-        ['0'...'9'] = { IN_COMMENT, COMMENT, false }, // STAY FOR ALLCHAR
-        ['a'...'z'] = { IN_COMMENT, COMMENT, false }, // STAY FOR ALLCHAR
-        ['A'...'Z'] = { IN_COMMENT, COMMENT, false }, // STAY FOR ALLCHAR
-        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '/'| '|'| ')'| ']'| '!'] = { IN_COMMENT, COMMENT, false } // STAY FOR ALLCHAR
+        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        ['*'] = { IN_BLOCK_COMMENT, COMMENT, true },
+        ['0'...'9'] = { IN_COMMENT, COMMENT, true }, // STAY FOR ALLCHAR
+        ['a'...'z'] = { IN_COMMENT, COMMENT, true }, // STAY FOR ALLCHAR
+        ['A'...'Z'] = { IN_COMMENT, COMMENT, true }, // STAY FOR ALLCHAR
+        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '/'| '|'| ')'| ']'| '!'] = { IN_COMMENT, COMMENT, true } // STAY FOR ALLCHAR
     },
     // IN_BLOCK_COMMENT state
     [IN_BLOCK_COMMENT] = {
-        ['/'] = { DONE, COMMENT, false }, // DONE NOT CONSIDERING DELIMITERS
-        ['*'] = { IN_BLOCK_COMMENT, COMMENT, false },
-        ['0'...'9'] = { IN_COMMENT, COMMENT, false }, // GOBACK FOR ALLCHAR
-        ['a'...'z'] = { IN_COMMENT, COMMENT, false }, // GOBACK FOR ALLCHAR
-        ['A'...'Z'] = { IN_COMMENT, COMMENT, false }, // GOBACK FOR ALLCHAR
-        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'] = { IN_COMMENT, COMMENT, false } // GOBACK FOR ALLCHAR
+        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        ['/'] = { START, COMMENT, true }, // Go back to initial state to get the next token
+        ['*'] = { IN_BLOCK_COMMENT, COMMENT, true },
+        ['0'...'9'] = { IN_COMMENT, COMMENT, true }, // GOBACK FOR ALLCHAR
+        ['a'...'z'] = { IN_COMMENT, COMMENT, true }, // GOBACK FOR ALLCHAR
+        ['A'...'Z'] = { IN_COMMENT, COMMENT, true }, // GOBACK FOR ALLCHAR
+        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'] = { IN_COMMENT, COMMENT, true } // GOBACK FOR ALLCHAR
     },
     // IN_LESS_OR_LEQ state
     [IN_LESS_OR_LEQ] = {
-        ['0'...'9'] = { DONE, LESS_RELOP, false }, // GOBACK FOR ALLCHAR
-        ['a'...'z'] = { DONE, LESS_RELOP, false }, // GOBACK FOR ALLCHAR
-        ['A'...'Z'] = { DONE, LESS_RELOP, false }, // GOBACK FOR ALLCHAR
-        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'|'/'|'*'] = { DONE, LESS_RELOP, false } // GOBACK FOR ALLCHAR
+        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        ['='] = { DONE, LESSEQ_RELOP, true },
+        ['0'...'9'] = { DONE, LESS_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        ['a'...'z'] = { DONE, LESS_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        ['A'...'Z'] = { DONE, LESS_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'|'/'|'*'] = { DONE, LESS_RELOP, false } // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+    },
+    // IN_LESS_OR_LEQ state
+    [IN_GREAT_OR_GEQ] = {
+        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        ['='] = { DONE, GREATEQ_RELOP, true },
+        ['0'...'9'] = { DONE, GREAT_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        ['a'...'z'] = { DONE, GREAT_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        ['A'...'Z'] = { DONE, GREAT_RELOP, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'|'/'|'*'] = { DONE, GREAT_RELOP, false } // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+    },
+    // IN_EQRELOP
+    [IN_EQ_OR_EQRELOP] = {
+        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        ['='] = { DONE, EQ_RELOP, true },
+        ['0'...'9'] = { DONE, EQUAL, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        ['a'...'z'] = { DONE, EQUAL, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        ['A'...'Z'] = { DONE, EQUAL, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'|'/'|'*'] = { DONE, EQUAL, false } // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+    },
+    [IN_NOTRELOP] = {
+        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        ['='] = { DONE, NOTEQ_RELOP, false },
+        ['0'...'9'] = { DONE, ERROR, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        ['a'...'z'] = { DONE, ERROR, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        ['A'...'Z'] = { DONE, ERROR, false }, // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'|'/'|'*'] = { DONE, ERROR, false } // IN CASE OF DELIMITERS (RETURN TOKENTYPE)
+    },
+    [IN_STRING] = {
+        ['\0'...'~'] = { DONE, ERROR, true }, // DEFAULT TO ERROR
+        ['"'] = { DONE, STRING, true },
+        ['0'...'9'] = { IN_STRING, STRING, true }, // STAY IN STR
+        ['a'...'z'] = { IN_STRING, STRING, true }, // STAY IN STR
+        ['A'...'Z'] = { IN_STRING, STRING, true }, // STAY IN STR
+        [' '| '\t'| '\n'| '['| ';'| '('| '<'| '>'| '+'| '-'| '|'| ')'| ']'| '!'|'/'|'*'] = { IN_STRING, STRING, true } // STAY IN STR
     },
     // DONE state
     [DONE] = {}
 };
 
 
+/*--[ getNextChar - returns next char in buffer ]--*/
 
-/*  [getToken - returns TokenType]  */
+/*--[ getNextToken - reuses prev buffer for optimization - returns TokenType ]--*/
+TokenType getNextToken( Buffer buffer, FILE * stream ){
+
+    char ch;
+    TokenType token_type;
+    LexerTableEntry table_entry = { START, -1, false };
+
+    while( table_entry.nextState != DONE && table_entry.tokenType != ERROR){ 
+        
+        ch = getNextChar(&buffer, stream);
+        table_entry = lexerTable[table_entry.nextState][ch];
+
+        //if should not consume, go back one pos in buffer->position
+        if( !table_entry.shouldConsume ) buffer.position-- ;
+
+    }
+    if(table_entry.tokenType == ERROR ) warn("AN ERROR OCCURED AT LINE: %d IN THE %dth CHAR:\n", buffer.line_number, buffer.line_char_pos);
+    
+    return table_entry.tokenType;
+
+    
+
+}
 
 /*  [main function - returns status]  */
 int main(int argc, char *argv[]) {
@@ -233,14 +262,18 @@ int main(int argc, char *argv[]) {
         perror(RED"fopen() error"YELLOW);
         return 1;
     }
+    
+    Buffer buffer;
+    allocateBuffer(&buffer, stream);
 
-    while (!feof(stream)) { //while not in end‐of‐file
+    int token_type = getNextToken(buffer, stream);
+    printf("%d", token_type);
+    
+    deallocateBuffer(&buffer);
+    
 
 
-
-    }
-
-
+    
     
     //closing stream
     fclose(stream);
