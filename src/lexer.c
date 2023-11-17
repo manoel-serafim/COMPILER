@@ -2,7 +2,7 @@
     TABLE-DRIVEN LEXER
 */
 
-#include "lexer.h"
+#include "include/lexer.h"
 
 
 /*  [main function - returns status]  */

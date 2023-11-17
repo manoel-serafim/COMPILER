@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "minperf.h": "c",
+        "libs.h": "c"
+    }
+}
