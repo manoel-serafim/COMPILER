@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
 
     if (argc != 2) {
         //NOT ENOUGH ARGS
-        warn("Usage: %s <filename>\n", argv[0]);
+        printf(RED"Usage: %s <filename>\n", argv[0]);
         return 1;
     }
 
