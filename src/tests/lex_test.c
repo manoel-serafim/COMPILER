@@ -1,10 +1,7 @@
 /*
     TABLE-DRIVEN LEXER
 */
-
 #include "../../include/lexer.h"
-
-
 /*  [main function - returns status]  */
 int main(int argc, char *argv[]) {
 
