@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
     }
 
     Buffer buffer;
-    allocateBuffer(&buffer, stream);
+    allocate_buffer(&buffer, stream);
 
 
     TokenRecord* token = malloc(sizeof(TokenRecord)); 
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
     int count;
     do{
-        getNextToken(&buffer, stream, token);
+        get_next_token(&buffer, stream, token);
         if(token->type == EOF){
             break;
         }
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     
     //cleanup functions
     free(token);
-    deallocateBuffer(&buffer);
+    deallocate_buffer(&buffer);
     fclose(stream);
 
 

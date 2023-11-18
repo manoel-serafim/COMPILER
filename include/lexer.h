@@ -1,5 +1,53 @@
-#include "libs.h"       //import all libs and definitions
+#include "macros.h"     //messaging
+#include "libs.h"       //libraries
 #include "minperf.h"    //minimal perfect hash lookup
+
+
+
+/*--[BUFFER DEFINITIONS]--*/
+#define BUFF_SIZE 256
+
+/*--[BUFFER STRUCTS]--*/
+typedef struct {
+    char *data;
+    size_t loaded_size;
+    size_t position;
+    size_t line_number;
+    size_t line_char_pos;
+} Buffer;
+
+
+/*--[BUFFER FUNCTIONS]--*/
+
+size_t load_buffer(Buffer *buffer, FILE *file) {
+    size_t read_size = fread(buffer->data, sizeof(char), BUFF_SIZE, file);
+    if (ferror(file)) {
+        perror(RED"ferror() error"YELLOW);
+        exit(EXIT_FAILURE);
+    }
+    buffer->data[read_size] = '\0';
+    buffer->position = 0;
+    return read_size;
+}
+
+void allocate_buffer(Buffer *buffer, FILE *file) {
+    buffer->data = (char *)calloc(BUFF_SIZE+1, sizeof(char));
+    if (buffer->data == NULL) {
+        perror(RED"calloc() error"YELLOW);
+        exit(EXIT_FAILURE);
+    }
+    buffer->loaded_size = load_buffer(buffer, file);
+    buffer->position = 0;
+    buffer->line_number = 1;
+    buffer->line_char_pos = 0;
+}
+
+void deallocate_buffer(Buffer *buffer) {
+    free(buffer->data);
+    buffer->data = NULL; // Set pointer to NULL after freeing
+}
+
+
 
 /*--[TOKEN DEFINITIONS]--*/
 #define LEXEME_SIZE 256
@@ -52,20 +100,13 @@ typedef enum {
     WHITESPACE,          
     COMMENT,
     STRING
-} TokenType;
+} token_type;
 
 /*--[TOKEN STRUCTS]--*/
 typedef struct {
-    TokenType type;
+    token_type type;
     char lexeme[LEXEME_SIZE];
 } TokenRecord;
-
-
-
-
-
-
-
 
 
 /*--[LEXER TABLE ENUMS]--*/
@@ -91,10 +132,12 @@ typedef enum {
 
 /*--[LEXER TABLE STRUCTS]--*/
 typedef struct {
-    LexerState nextState;
-    TokenType tokenType;
-    bool shouldConsume; // Should advance input?
+    LexerState next_state;
+    token_type token_type;
+    bool consumed; // Should advance input?
 } LexerTableEntry;
+
+
 
 /*--[LEXER TABLE]--*/
 // 128 because of the 128 ASCII chars
@@ -381,59 +424,9 @@ LexerTableEntry lexerTable[17][128] = {
 
 
 
-
-/*--[BUFFER DEFINITIONS]--*/
-#define BUFF_SIZE 256
-/*--[BUFFER STRUCTS]--*/
-typedef struct {
-    char *data;
-    size_t loaded_size;
-    size_t position;
-    size_t line_number;
-    size_t line_char_pos;
-} Buffer;
-
-
-
-
-
-
-/*--[BUFFER FUNCTIONS]--*/
-
-size_t loadBuffer(Buffer *buffer, FILE *file) {
-    size_t read_size = fread(buffer->data, sizeof(char), BUFF_SIZE, file);
-    if (ferror(file)) {
-        perror(RED"ferror() error"YELLOW);
-        exit(EXIT_FAILURE);
-    }
-    buffer->data[read_size] = '\0';
-    buffer->position = 0;
-    return read_size;
-}
-
-void allocateBuffer(Buffer *buffer, FILE *file) {
-    buffer->data = (char *)calloc(BUFF_SIZE+1, sizeof(char));
-    if (buffer->data == NULL) {
-        perror(RED"calloc() error"YELLOW);
-        exit(EXIT_FAILURE);
-    }
-    buffer->loaded_size = loadBuffer(buffer, file);
-    buffer->position = 0;
-    buffer->line_number = 1;
-    buffer->line_char_pos = 0;
-}
-
-void deallocateBuffer(Buffer *buffer) {
-    free(buffer->data);
-    buffer->data = NULL; // Set pointer to NULL after freeing
-}
-
-
-
-
 /*--[ LEXER FUNCTIONS ]--*/
-/*--[ getNextChar - returns next char in buffer and manage its memory ]--*/
-char getNextChar(Buffer *buffer, FILE* file) {
+/*--[ get_next_char - returns next char in buffer and manage its memory ]--*/
+char get_next_char(Buffer *buffer, FILE* file) {
 
     char current_char = buffer->data[buffer->position];
     if (current_char == '\0') {
@@ -441,7 +434,7 @@ char getNextChar(Buffer *buffer, FILE* file) {
             return EOF;
         }
         buffer->position = 0;
-        buffer->loaded_size = loadBuffer(buffer, file);
+        buffer->loaded_size = load_buffer(buffer, file);
         current_char = buffer->data[buffer->position];
     }
 
@@ -456,17 +449,17 @@ char getNextChar(Buffer *buffer, FILE* file) {
     return current_char;
 }
 
-/*--[ getNextToken - reuses previous buffer for optimization - returns into the token ]--*/
-void getNextToken( Buffer* buffer, FILE * stream, TokenRecord * token ){
+/*--[ get_next_token - reuses previous buffer for optimization - returns into the token ]--*/
+void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
 
     char ch;
     LexerTableEntry table_entry = { START, -1, true };
     memset(token->lexeme, 0, sizeof token->lexeme); //clean lexeme
 
     
-    while( table_entry.nextState != DONE && table_entry.nextState != ERROR ){ 
+    while( table_entry.next_state != DONE && table_entry.next_state != ERROR ){ 
 
-        ch = getNextChar(buffer, stream);
+        ch = get_next_char(buffer, stream);
         //adhoc for end of file
         if(ch == EOF){
             token->type = EOF;
@@ -474,7 +467,7 @@ void getNextToken( Buffer* buffer, FILE * stream, TokenRecord * token ){
         }
         if(ch < 0 || ch > 127){
             //Outside of lower ASCII range
-            if(table_entry.nextState== IN_COMMENT){
+            if(table_entry.next_state== IN_COMMENT){
                 continue;
             }else{
                 warn("ERROR: character outside of ASCII range allowed");
@@ -483,16 +476,16 @@ void getNextToken( Buffer* buffer, FILE * stream, TokenRecord * token ){
             }
         }
 
-        table_entry = lexerTable[table_entry.nextState][ch];
+        table_entry = lexerTable[table_entry.next_state][ch];
 
-        if (table_entry.nextState == DONE && (table_entry.tokenType == COMMENT || table_entry.tokenType == WHITESPACE )){
-            table_entry.nextState = START;
+        if (table_entry.next_state == DONE && (table_entry.token_type == COMMENT || table_entry.token_type == WHITESPACE )){
+            table_entry.next_state = START;
             memset(token->lexeme, 0, sizeof token->lexeme); //clean lexeme
             continue;
         }
 
         //if this whas a lookahead , do not consume it
-        if( table_entry.shouldConsume == false ) {
+        if( table_entry.consumed == false ) {
             buffer->position--;
             buffer->line_char_pos--;
         }else{
@@ -503,43 +496,40 @@ void getNextToken( Buffer* buffer, FILE * stream, TokenRecord * token ){
     }
 
     //in error get the rest of the lexeme
-    if(table_entry.nextState == ERROR ){
-        while( table_entry.nextState != DONE ){
-            ch = getNextChar(buffer, stream);
+    if(table_entry.next_state == ERROR ){
+        while( table_entry.next_state != DONE ){
+            ch = get_next_char(buffer, stream);
             if(ch == EOF){
                 token->type = EOF;
                 break;
             } 
-            table_entry = lexerTable[table_entry.nextState][ch];
+            table_entry = lexerTable[table_entry.next_state][ch];
             token->lexeme[strlen(token->lexeme)] = ch;
             token->lexeme[strlen(token->lexeme)+1] = '\0';
         }
     }
 
     
-    if((table_entry.tokenType == WHITESPACE) || (table_entry.tokenType == COMMENT) ) table_entry.tokenType = EOF; 
+    if((table_entry.token_type == WHITESPACE) || (table_entry.token_type == COMMENT) ) table_entry.token_type = EOF; 
     //check if id is keyword
-    if( table_entry.tokenType == ID ){
+    if( table_entry.token_type == ID ){
         const struct keyword* key = in_word_set(token->lexeme, strlen(token->lexeme));
         if(key != NULL){
-            table_entry.tokenType =  key->type;
+            table_entry.token_type =  key->type;
         }
 
     }
-    if(table_entry.tokenType == INVALID ) warn("AN ERROR OCCURED AT %dth LINE IN THE %dth CHAR:\n LEXEME: %s", buffer->line_number, buffer->line_char_pos,token->lexeme );
+    if(table_entry.token_type == INVALID ) warn("AN ERROR OCCURED AT %dth LINE IN THE %dth CHAR:\n LEXEME: %s", buffer->line_number, buffer->line_char_pos,token->lexeme ); //show
     
-    token->type = table_entry.tokenType;
+    token->type = table_entry.token_type;
 }
 
 
 
 
 
-
-
-
-/*--TODO--*/
-void indicateError(Buffer* buffer){
+/**/
+void indicate_error(Buffer* buffer){
 
     warn("AN ERROR OCCURRED AT LINE: %zu IN THE %zu-th CHAR:\n", buffer->line_number, buffer->line_char_pos);
         
@@ -560,3 +550,7 @@ void indicateError(Buffer* buffer){
     putchar('\n');
     
 }
+
+
+
+

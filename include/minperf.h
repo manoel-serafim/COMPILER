@@ -40,13 +40,8 @@ struct keyword { char *name; unsigned int type;};
 #define MAX_HASH_VALUE 9
 /* maximum key range = 8, duplicates = 0 */
 
-#ifdef __GNUC__
 __inline
-#else
-#ifdef __cplusplus
-inline
-#endif
-#endif
+
 
 /*
    Colisions are threated with 
