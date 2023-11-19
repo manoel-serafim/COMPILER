@@ -108,9 +108,9 @@ LexerTableEntry lexerTable[18][129] = {
         ['['] = { DONE, ID, false, false },
         [']'] = { DONE, ID, false, false },
         //whitespace
-        [' '] = { DONE, ID, false, false },
-        ['\t'] ={ DONE, ID, false, false },
-        ['\n'] ={ DONE, ID, false, false },
+        [' '] = { DONE, ID, true, false },
+        ['\t'] ={ DONE, ID, true, false },
+        ['\n'] ={ DONE, ID, true, false },
         ['\0'] = { DONE, ID, true, false }
     },
 
@@ -144,9 +144,9 @@ LexerTableEntry lexerTable[18][129] = {
         //['['] = { DONE, ID, false },
         [']'] = { DONE, NUM, false, false },
         //whitespace
-        [' '] = { DONE, NUM, false, false },
-        ['\t'] ={ DONE, NUM, false, false },
-        ['\n'] ={ DONE, NUM, false, false },
+        [' '] = { DONE, NUM, true, false },
+        ['\t'] ={ DONE, NUM, true, false },
+        ['\n'] ={ DONE, NUM, true, false },
         ['\0'] = { DONE, NUM, true, false }
 
     },
@@ -167,9 +167,9 @@ LexerTableEntry lexerTable[18][129] = {
         ['_'] = { IN_ID, DIV_PRE_ALOP, false, false },
         ['$'] = { IN_ID, DIV_PRE_ALOP, false, false },
         //whitespace
-        [' '] = { DONE, DIV_PRE_ALOP, false, false },
-        ['\t'] ={ DONE, DIV_PRE_ALOP, false, false },
-        ['\n'] ={ DONE, DIV_PRE_ALOP, false, false },
+        [' '] = { DONE, DIV_PRE_ALOP, true, false },
+        ['\t'] ={ DONE, DIV_PRE_ALOP, true, false },
+        ['\n'] ={ DONE, DIV_PRE_ALOP, true, false },
         ['\0'] = { DONE, DIV_PRE_ALOP, true, false}
 
         
@@ -177,20 +177,20 @@ LexerTableEntry lexerTable[18][129] = {
     // IN_COMMENT state
     [IN_COMMENT] = {
         /*--[DEFAULTING TO STAY FOR ALL CHARS]--*/
-        ['\0'...127] = { IN_COMMENT, COMMENT, true, false },
+        ['\0'...127] = { IN_COMMENT, COMMENT, true, true },
 
         /*--[RULES]--*/
-        ['*'] = { IN_BLOCK_COMMENT, COMMENT, true, false },
+        ['*'] = { IN_BLOCK_COMMENT, COMMENT, true, true },
         ['\0'] = { ERROR, INVALID, true, false}
         
     },
     // IN_BLOCK_COMMENT state
     [IN_BLOCK_COMMENT] = {
-        ['\0'...127] = { IN_COMMENT, COMMENT, true, false },
+        ['\0'...127] = { IN_COMMENT, COMMENT, true, true },
 
         /*--[RULES]--*/
-        ['/'] = { START, COMMENT, true, false }, // Go back to the initial state to get the next token
-        ['*'] = { IN_BLOCK_COMMENT, COMMENT, true, false },
+        ['/'] = { START, COMMENT, true, true }, // Go back to the initial state to get the next token
+        ['*'] = { IN_BLOCK_COMMENT, COMMENT, true, true },
         ['\0'] = { ERROR, INVALID, true, false}
 
     },
@@ -213,9 +213,9 @@ LexerTableEntry lexerTable[18][129] = {
         //string relational
         ['"'] = { DONE, LESS_RELOP, false, false },
         //whitespace
-        [' '] = { DONE, LESS_RELOP, false, false },
-        ['\t'] ={ DONE, LESS_RELOP, false, false },
-        ['\n'] ={ DONE, LESS_RELOP, false, false },
+        [' '] = { DONE, LESS_RELOP, true, false },
+        ['\t'] ={ DONE, LESS_RELOP, true, false },
+        ['\n'] ={ DONE, LESS_RELOP, true, false },
         ['\0'] = { DONE, LESS_RELOP, true, false},
 
 
@@ -238,9 +238,9 @@ LexerTableEntry lexerTable[18][129] = {
         //string relational
         ['"'] = { DONE, GREAT_RELOP, false, false },
         //whitespace
-        [' '] = { DONE, GREAT_RELOP, false, false },
-        ['\t'] ={ DONE, GREAT_RELOP, false, false },
-        ['\n'] ={ DONE, GREAT_RELOP, false, false },
+        [' '] = { DONE, GREAT_RELOP, true, false },
+        ['\t'] ={ DONE, GREAT_RELOP, true, false },
+        ['\n'] ={ DONE, GREAT_RELOP, true, false },
         ['\0'] = { DONE, GREAT_RELOP, true, false}
         
 
@@ -263,9 +263,9 @@ LexerTableEntry lexerTable[18][129] = {
         //string relational
         ['"'] = { DONE, EQUAL, false, false },
         //whitespace
-        [' '] = { DONE, EQUAL, false, false },
-        ['\t'] ={ DONE, EQUAL, false, false },
-        ['\n'] ={ DONE, EQUAL, false, false },
+        [' '] = { DONE, EQUAL, true, false },
+        ['\t'] ={ DONE, EQUAL, true, false },
+        ['\n'] ={ DONE, EQUAL, true, false },
         ['\0'] = { DONE, EQUAL, true, false}
 
 
@@ -302,9 +302,9 @@ LexerTableEntry lexerTable[18][129] = {
         ['('] = { DONE, MULT_PRE_ALOP, false, false },
         [')'] = { DONE, MULT_PRE_ALOP, false, false },
         //whitespace
-        [' '] = { DONE, MULT_PRE_ALOP, false, false },
-        ['\t'] ={ DONE, MULT_PRE_ALOP, false, false },
-        ['\n'] ={ DONE, MULT_PRE_ALOP, false, false },
+        [' '] = { DONE, MULT_PRE_ALOP, true, false },
+        ['\t'] ={ DONE, MULT_PRE_ALOP, true, false },
+        ['\n'] ={ DONE, MULT_PRE_ALOP, true, false },
         ['\0'] = { DONE, MULT_PRE_ALOP, true, false}
 
     },
@@ -339,9 +339,10 @@ LexerTableEntry lexerTable[18][129] = {
         ['['] = { DONE, INVALID, false, false },
         [']'] = { DONE, INVALID, false, false },
         //whitespace
-        [' '] = { DONE, INVALID, false, false },
-        ['\t'] ={ DONE, INVALID, false, false },
-        ['\n'] ={ DONE, INVALID, false, false },
+        [' '] = { DONE, INVALID, true, false },
+        ['\t'] ={ DONE, INVALID, true, false },
+        ['\n'] ={ DONE, INVALID, true, false },
+        ['\0'] = { DONE, INVALID, false, false}
 
     }
 };
@@ -366,6 +367,10 @@ char get_next_char(Buffer *buffer, FILE* file) {
     if (current_char == '\n') {
         buffer->line_number++;
         buffer->line_char_pos = 0;
+        if(fgetpos(file, &(buffer->line_pos)) != 0){
+            perror("fgetpos() error");
+            //will not return error as it will only be a problem if there is an error
+        }
     }
 
     buffer->position++;
@@ -374,9 +379,18 @@ char get_next_char(Buffer *buffer, FILE* file) {
     return current_char;
 }
 
-void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, TokenRecord* token){
+char unget_next_char( Buffer* buffer){
+    buffer->position--;
+    buffer->line_char_pos--;
+    // if it is \n the DFA will always consume
+}
 
-    printf(RED"AN ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR;", buffer->line_number, buffer->line_char_pos);
+void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, TokenRecord* token){
+    puts(RED"--[ LEXICAL ERROR ]--");
+    int in_line_placement = buffer->line_char_pos;
+    fpos_t line_placement = buffer->line_pos; 
+    printf(CYN"\t[!] THE ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR [!]\n"RESET, buffer->line_number, buffer->line_char_pos);
+    
 
     char ch;
     //Continue traversing the DFA to get the error lexeme while not in a delimiter
@@ -386,11 +400,41 @@ void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, T
             break;
         } 
         table_entry = lexerTable[table_entry.next_state][ch];
-        token->lexeme[strlen(token->lexeme)] = ch;
-        token->lexeme[strlen(token->lexeme)+1] = '\0';
+        if( table_entry.store == true ) {
+            token->lexeme[strlen(token->lexeme)] = ch;
+            token->lexeme[strlen(token->lexeme)+1] = '\0';
+        }
     }
     token->type = table_entry.token_type;
-    printf("LEXEME = %s", token->lexeme);
+    printf(YELLOW"\t[!] LEXEME: %s [!]\n", token->lexeme);
+
+
+    /*
+    //print the line where the error occured:
+    if( fsetpos( stream, &(buffer->line_pos) ) != 0 ) {
+      perror( "fsetpos error" );
+    }
+    load_buffer(buffer, stream);
+    while (ch != '\n' ) {
+        puts("HERE");
+        ch = get_next_char(buffer, stream);
+        if(buffer->position <= in_line_placement){
+            printf(RED"%c"RESET, ch);
+        }else if(buffer->position < in_line_placement+strlen(token->lexeme)){
+            printf(YELLOW"%c"RESET, ch);
+        }else{
+            printf("%c",ch);
+        }
+    }
+    //indicator
+    printf("%s","\t");
+    while(in_line_placement-1 > 0){
+        printf("%s", " ");
+        in_line_placement--;
+    }
+    puts("^]--char that caused the error");*/
+    
+    puts(RED"}");
 }
 
 /*--[ get_next_token - reuses previous buffer for optimization - returns into the token ]--*/
@@ -420,8 +464,7 @@ void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
         
         //if this whas a lookahead , do not consume it
         if( table_entry.consume == false ) {
-            buffer->position--;
-            buffer->line_char_pos--;
+            unget_next_char(buffer);
         }
         if( table_entry.store == true ) {
             token->lexeme[strlen(token->lexeme)] = ch;

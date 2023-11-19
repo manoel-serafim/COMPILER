@@ -15,6 +15,7 @@ typedef struct {
     size_t position;
     size_t line_number;
     size_t line_char_pos;
+    fpos_t line_pos;
 } Buffer;
 
 size_t load_buffer(Buffer *buffer, FILE *file);
