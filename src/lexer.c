@@ -406,7 +406,7 @@ void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, T
         }
     }
     token->type = table_entry.token_type;
-    printf(YELLOW"\t[!] LEXEME: %s [!]\n", token->lexeme);
+    printf(YELLOW"\t[!] LEXEME: "RED"%s "YELLOW"[!]\n", token->lexeme);
 
 
     /*
