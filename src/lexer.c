@@ -1,242 +1,311 @@
 #include <lexer.h>
 #include "minperf.h"    //minimal perfect hash lookup
 
+
+
+/*--[LEXER TABLE ENUMS]--*/
+typedef enum {
+    START,
+    IN_ID,
+    IN_NUM,
+    IN_DIV_OR_COMM,
+    IN_COMMENT,
+    IN_BLOCK_COMMENT,
+    IN_LESS_OR_LEQ,
+    IN_LEQ,
+    IN_GREAT_OR_GEQ,
+    IN_GEQ,
+    IN_EQ_OR_EQRELOP,
+    IN_EQRELOP,
+    IN_NOTRELOP,
+    OUT_NOTRELOP,
+    IN_STRING,
+    IN_MULT_OR_COMM,
+    DONE,
+    ERROR
+} LexerState;
+
+/*--[LEXER TABLE STRUCTS]--*/
+typedef struct {
+    LexerState next_state;
+    token_type token_type;
+    bool consume; // Should advance input?
+    bool store;
+} LexerTableEntry;
+
+
 /*--[LEXER TABLE]--*/
 // 128 because of the 128 ASCII chars
 /*--[ LexTable - using meaningfull vars not only ints ]--*/
-LexerTableEntry lexerTable[17][128] = { 
+LexerTableEntry lexerTable[18][129] = { 
     /*--[ only accepting delimiters that make sense ]--*/
     [START] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, false },
+        ['\0'...127] = { ERROR, INVALID, false, false },
         /*--[RULES]--*/
-        ['a'...'z'] = { IN_ID, ID, true },
-        ['A'...'Z'] = { IN_ID, ID, true },
-        ['_'] = { IN_ID, ID, true },
-        ['$'] = { IN_ID, ID, true },
-        ['0'...'9'] = { IN_NUM, NUM, true },
-        ['/'] = { IN_DIV_OR_COMM, DIV_PRE_ALOP, true }, 
-        ['+'] = { DONE, PLUS_ALOP, true }, 
-        ['-'] = { DONE, MINUS_ALOP, true }, 
-        ['*'] = { DONE, MULT_PRE_ALOP, true }, 
-        ['<'] = { IN_LESS_OR_LEQ, LESS_RELOP, true }, 
-        ['>'] = { IN_GREAT_OR_GEQ, GREAT_RELOP, true }, 
-        ['='] = { IN_EQ_OR_EQRELOP, EQUAL, true }, 
-        ['!'] = { IN_NOTRELOP, NOTEQ_RELOP, true }, //NO LOOKAHEAD STATE
-        [';'] = { DONE, SEMICOL_PUNCT, true }, //NO LOOKAHEAD 
-        [','] = { DONE, COMMA_PUNCT, true }, //NO LOOKAHEAD
-        ['"'] = { IN_STRING, STRING, true }, // NO LOOKAHEAD STATE
-        ['('] = { DONE, CIRCLEOP_BRACKET, true }, 
-        [')'] = { DONE, CIRCLECL_BRACKET, true },
-        ['{'] = { DONE, CURLYOP_BRACKET, true },
-        ['}'] = { DONE, CURLYCL_BRACKET, true },
-        ['['] = { DONE, SQUAREOP_BRACKET, true },
-        [']'] = { DONE, SQUARECL_BRACKET, true },
-        [' '] = { DONE, WHITESPACE, true },
-        ['\t'] = { DONE, WHITESPACE, true },
-        ['\n'] = { DONE, WHITESPACE, true }
+        ['a'...'z'] = { IN_ID, ID, true, true },
+        ['A'...'Z'] = { IN_ID, ID, true, true },
+        ['_'] = { IN_ID, ID, true, true },
+        ['$'] = { IN_ID, ID, true, true },
+        ['0'...'9'] = { IN_NUM, NUM, true, true },
+        ['/'] = { IN_DIV_OR_COMM, DIV_PRE_ALOP, true, true }, 
+        ['+'] = { DONE, PLUS_ALOP, true, true }, 
+        ['-'] = { DONE, MINUS_ALOP, true, true }, 
+        ['*'] = { DONE, IN_MULT_OR_COMM, true, true }, 
+        ['<'] = { IN_LESS_OR_LEQ, LESS_RELOP, true, true }, 
+        ['>'] = { IN_GREAT_OR_GEQ, GREAT_RELOP, true, true }, 
+        ['='] = { IN_EQ_OR_EQRELOP, EQUAL, true, true }, 
+        ['!'] = { IN_NOTRELOP, NOTEQ_RELOP, true, true }, //NO LOOKAHEAD STATE
+        [';'] = { DONE, SEMICOL_PUNCT, true, true }, //NO LOOKAHEAD 
+        [','] = { DONE, COMMA_PUNCT, true, true }, //NO LOOKAHEAD
+        ['"'] = { IN_STRING, STRING, true, true }, // NO LOOKAHEAD STATE
+        ['('] = { DONE, CIRCLEOP_BRACKET, true, true }, 
+        [')'] = { DONE, CIRCLECL_BRACKET, true, true },
+        ['{'] = { DONE, CURLYOP_BRACKET, true, true },
+        ['}'] = { DONE, CURLYCL_BRACKET, true, true },
+        ['['] = { DONE, SQUAREOP_BRACKET, true, true },
+        [']'] = { DONE, SQUARECL_BRACKET, true, true },
+        [' '] = { START, WHITESPACE, true, false },
+        ['\t'] = { START, WHITESPACE, true, false },
+        ['\n'] = { START, WHITESPACE, true, false },
+        ['\0'] = {DONE, FIN, true, false }, //finished
 
     },
 
     // IN_ID state
     [IN_ID] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, false },
+        ['\0'...127] = { ERROR, INVALID, false, false },
 
         /*--[RULES]--*/
-        ['a'...'z'] = { IN_ID, ID, true },
-        ['A'...'Z'] = { IN_ID, ID, true },
-        ['0'...'9'] = { IN_ID, ID, true },
-        ['_'] = { IN_ID, ID, true },
-        ['$'] = { IN_ID, ID, true },
+        ['a'...'z'] = { IN_ID, ID, true, true },
+        ['A'...'Z'] = { IN_ID, ID, true, true },
+        ['0'...'9'] = { IN_ID, ID, true, true },
+        ['_'] = { IN_ID, ID, true, true },
+        ['$'] = { IN_ID, ID, true, true },
 
         /*--[DELIMITERS-identifier]--*/
         //arithmetic
-        ['+'] = { DONE, ID, false }, 
-        ['-'] = { DONE, ID, false }, 
-        ['*'] = { DONE, ID, false },
-        ['/'] = { DONE, ID, false },
+        ['+'] = { DONE, ID, false, false }, 
+        ['-'] = { DONE, ID, false, false }, 
+        ['*'] = { DONE, ID, false, false },
+        ['/'] = { DONE, ID, false, false },
         //relational 
-        ['<'] = { DONE, ID, false }, 
-        ['>'] = { DONE, ID, false }, 
-        ['='] = { DONE, ID, false }, 
-        ['!'] = { DONE, ID, false },
-        //ponctual 
-        [';'] = { DONE, ID, false },
-        [','] = { DONE, ID, false },
+        ['<'] = { DONE, ID, false, false }, 
+        ['>'] = { DONE, ID, false, false }, 
+        ['='] = { DONE, ID, false, false }, 
+        ['!'] = { DONE, ID, false, false },
+        //punctual 
+        [';'] = { DONE, ID, false, false },
+        [','] = { DONE, ID, false, false },
         //macros
-        ['"'] = { DONE, ID, false },
+        ['"'] = { DONE, ID, false, false },
         //in/out functions/arrays
-        ['('] = { DONE, ID, false },
-        [')'] = { DONE, ID, false },
-        ['{'] = { DONE, ID, false },
-        ['}'] = { DONE, ID, false },
-        ['['] = { DONE, ID, false },
-        [']'] = { DONE, ID, false },
+        ['('] = { DONE, ID, false, false },
+        [')'] = { DONE, ID, false, false },
+        ['{'] = { DONE, ID, false, false },
+        ['}'] = { DONE, ID, false, false },
+        ['['] = { DONE, ID, false, false },
+        [']'] = { DONE, ID, false, false },
         //whitespace
-        [' '] = { DONE, ID, false },
-        ['\t'] ={ DONE, ID, false },
-        ['\n'] ={ DONE, ID, false }
-
+        [' '] = { DONE, ID, false, false },
+        ['\t'] ={ DONE, ID, false, false },
+        ['\n'] ={ DONE, ID, false, false },
+        ['\0'] = { DONE, ID, true, false }
     },
 
     // IN_NUM state
     [IN_NUM] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, false },
+        ['\0'...127] = { ERROR, INVALID, false, false },
 
         /*--[RULES]--*/
-        ['0'...'9'] = { IN_NUM, NUM, true },
+        ['0'...'9'] = { IN_NUM, NUM, true, true },
 
         /*--[DELIMITERS-number]--*/
         //arithmetic
-        ['+'] = { DONE, NUM, false }, 
-        ['-'] = { DONE, NUM, false }, 
-        ['*'] = { DONE, NUM, false },
-        ['/'] = { DONE, NUM, false },
+        ['+'] = { DONE, NUM, false, false }, 
+        ['-'] = { DONE, NUM, false, false }, 
+        ['*'] = { DONE, NUM, false, false },
+        ['/'] = { DONE, NUM, false, false },
         //relational 
-        ['<'] = { DONE, NUM, false }, 
-        ['>'] = { DONE, NUM, false }, 
-        ['='] = { DONE, NUM, false }, 
-        ['!'] = { DONE, NUM, false },
-        //ponctual 
-        [';'] = { DONE, NUM, false },
-        [','] = { DONE, NUM, false },
+        ['<'] = { DONE, NUM, false, false }, 
+        ['>'] = { DONE, NUM, false, false }, 
+        ['='] = { DONE, NUM, false, false }, 
+        ['!'] = { DONE, NUM, false, false },
+        //punctual 
+        [';'] = { DONE, NUM, false, false },
+        [','] = { DONE, NUM, false, false },
         //in/out functions/arrays
         //['('] = { DONE, ID, false },
-        [')'] = { DONE, NUM, false },
+        [')'] = { DONE, NUM, false, false },
         //['{'] = { DONE, ID, false },
-        ['}'] = { DONE, NUM, false },
+        ['}'] = { DONE, NUM, false, false },
         //['['] = { DONE, ID, false },
-        [']'] = { DONE, NUM, false },
+        [']'] = { DONE, NUM, false, false },
         //whitespace
-        [' '] = { DONE, NUM, false },
-        ['\t'] ={ DONE, NUM, false },
-        ['\n'] ={ DONE, NUM, false }
+        [' '] = { DONE, NUM, false, false },
+        ['\t'] ={ DONE, NUM, false, false },
+        ['\n'] ={ DONE, NUM, false, false },
+        ['\0'] = { DONE, NUM, true, false }
 
     },
 
     // IN_DIV_OR_COMM 
     [IN_DIV_OR_COMM] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, false }, 
-
+        ['\0'...127] = { ERROR, INVALID, false, false }, 
+        
         /*--[RULES]--*/
-        ['*'] = { IN_COMMENT, COMMENT, true },
-
+        ['*'] = { IN_COMMENT, COMMENT, true, true },
+        
         /*--[DELIMITERS-division]--*/
         //alphanumerical
-        ['0'...'9'] = { DONE, DIV_PRE_ALOP, false }, 
-        ['a'...'z'] = { DONE, DIV_PRE_ALOP, false }, 
-        ['A'...'Z'] = { DONE, DIV_PRE_ALOP, false }, 
-        ['_'] = { IN_ID, DIV_PRE_ALOP, false },
-        ['$'] = { IN_ID, DIV_PRE_ALOP, false },
+        ['0'...'9'] = { DONE, DIV_PRE_ALOP, false, false }, 
+        ['a'...'z'] = { DONE, DIV_PRE_ALOP, false, false }, 
+        ['A'...'Z'] = { DONE, DIV_PRE_ALOP, false, false }, 
+        ['_'] = { IN_ID, DIV_PRE_ALOP, false, false },
+        ['$'] = { IN_ID, DIV_PRE_ALOP, false, false },
         //whitespace
-        [' '] = { DONE, DIV_PRE_ALOP, false },
-        ['\t'] ={ DONE, DIV_PRE_ALOP, false },
-        ['\n'] ={ DONE, DIV_PRE_ALOP, false }
+        [' '] = { DONE, DIV_PRE_ALOP, false, false },
+        ['\t'] ={ DONE, DIV_PRE_ALOP, false, false },
+        ['\n'] ={ DONE, DIV_PRE_ALOP, false, false },
+        ['\0'] = { DONE, DIV_PRE_ALOP, true, false}
+
         
     },
     // IN_COMMENT state
     [IN_COMMENT] = {
         /*--[DEFAULTING TO STAY FOR ALL CHARS]--*/
-        ['\0'...'~'] = { IN_COMMENT, COMMENT, true },
+        ['\0'...127] = { IN_COMMENT, COMMENT, true, false },
 
         /*--[RULES]--*/
-        ['*'] = { IN_BLOCK_COMMENT, COMMENT, true },
+        ['*'] = { IN_BLOCK_COMMENT, COMMENT, true, false },
+        ['\0'] = { ERROR, INVALID, true, false}
         
     },
     // IN_BLOCK_COMMENT state
     [IN_BLOCK_COMMENT] = {
-        /*--[DEFAULTING TO GO BACK FOR ALL CHARS]--*/
-        ['\0'...'~'] = { IN_COMMENT, COMMENT, true },
+        ['\0'...127] = { IN_COMMENT, COMMENT, true, false },
 
         /*--[RULES]--*/
-        ['/'] = { DONE, COMMENT, true }, // Go back to initial state to get the next token
-        ['*'] = { IN_BLOCK_COMMENT, COMMENT, true },
+        ['/'] = { START, COMMENT, true, false }, // Go back to the initial state to get the next token
+        ['*'] = { IN_BLOCK_COMMENT, COMMENT, true, false },
+        ['\0'] = { ERROR, INVALID, true, false}
 
     },
 
     // IN_LESS_OR_LEQ state
     [IN_LESS_OR_LEQ] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, false },
+        ['\0'...127] = { ERROR, INVALID, false, false },
 
         /*--[RULES]--*/
-        ['='] = { DONE, LESSEQ_RELOP, true },
+        ['='] = { DONE, LESSEQ_RELOP, true, true },
 
         /*--[DELIMITERS-less]--*/
-        //alfabethical
-        ['a'...'z'] = { DONE, LESS_RELOP, false },
-        ['A'...'Z'] = { DONE, LESS_RELOP, false },
-        ['0'...'9'] = { DONE, LESS_RELOP, false },
-        ['_'] = { DONE, LESS_RELOP, false },
-        ['$'] = { DONE, LESS_RELOP, false },
+        //alphabetical
+        ['a'...'z'] = { DONE, LESS_RELOP, false, false },
+        ['A'...'Z'] = { DONE, LESS_RELOP, false, false },
+        ['0'...'9'] = { DONE, LESS_RELOP, false, false },
+        ['_'] = { DONE, LESS_RELOP, false, false },
+        ['$'] = { DONE, LESS_RELOP, false, false },
         //string relational
-        ['"'] = { DONE, LESS_RELOP, false },
+        ['"'] = { DONE, LESS_RELOP, false, false },
         //whitespace
-        [' '] = { DONE, LESS_RELOP, false },
-        ['\t'] ={ DONE, LESS_RELOP, false },
-        ['\n'] ={ DONE, LESS_RELOP, false }
+        [' '] = { DONE, LESS_RELOP, false, false },
+        ['\t'] ={ DONE, LESS_RELOP, false, false },
+        ['\n'] ={ DONE, LESS_RELOP, false, false },
+        ['\0'] = { DONE, LESS_RELOP, true, false},
+
+
     },
     // IN_LESS_OR_LEQ state
     [IN_GREAT_OR_GEQ] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, false },
+        ['\0'...127] = { ERROR, INVALID, false, false },
 
         /*--[RULES]--*/
-        ['='] = { DONE, GREATEQ_RELOP, true },
+        ['='] = { DONE, GREATEQ_RELOP, true, true },
 
-        /*--[DELIMITERS-grater]--*/
-        //alfabethical
-        ['a'...'z'] = { DONE, GREAT_RELOP, false },
-        ['A'...'Z'] = { DONE, GREAT_RELOP, false },
-        ['0'...'9'] = { DONE, GREAT_RELOP, false },
-        ['_'] = { DONE, GREAT_RELOP, false },
-        ['$'] = { DONE, GREAT_RELOP, false },
+        /*--[DELIMITERS-greater]--*/
+        //alphabetical
+        ['a'...'z'] = { DONE, GREAT_RELOP, false, false },
+        ['A'...'Z'] = { DONE, GREAT_RELOP, false, false },
+        ['0'...'9'] = { DONE, GREAT_RELOP, false, false },
+        ['_'] = { DONE, GREAT_RELOP, false, false },
+        ['$'] = { DONE, GREAT_RELOP, false, false },
         //string relational
-        ['"'] = { DONE, GREAT_RELOP, false },
+        ['"'] = { DONE, GREAT_RELOP, false, false },
         //whitespace
-        [' '] = { DONE, GREAT_RELOP, false },
-        ['\t'] ={ DONE, GREAT_RELOP, false },
-        ['\n'] ={ DONE, GREAT_RELOP, false }
+        [' '] = { DONE, GREAT_RELOP, false, false },
+        ['\t'] ={ DONE, GREAT_RELOP, false, false },
+        ['\n'] ={ DONE, GREAT_RELOP, false, false },
+        ['\0'] = { DONE, GREAT_RELOP, true, false}
+        
+
     },
     // IN_EQRELOP
     [IN_EQ_OR_EQRELOP] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, false },
+        ['\0'...127] = { ERROR, INVALID, false, false },
 
         /*--[RULES]--*/
-        ['='] = { DONE, EQ_RELOP, true },
-        
+        ['='] = { DONE, EQ_RELOP, true, true },
+
         /*--[DELIMITERS-equal]--*/
-        //alfabethical
-        ['a'...'z'] = { DONE, EQUAL, false },
-        ['A'...'Z'] = { DONE, EQUAL, false },
-        ['0'...'9'] = { DONE, EQUAL, false },
-        ['_'] = { DONE, EQUAL, false },
-        ['$'] = { DONE, EQUAL, false },
+        //alphabetical
+        ['a'...'z'] = { DONE, EQUAL, false, false },
+        ['A'...'Z'] = { DONE, EQUAL, false, false },
+        ['0'...'9'] = { DONE, EQUAL, false, false },
+        ['_'] = { DONE, EQUAL, false, false },
+        ['$'] = { DONE, EQUAL, false, false },
         //string relational
-        ['"'] = { DONE, EQUAL, false },
+        ['"'] = { DONE, EQUAL, false, false },
         //whitespace
-        [' '] = { DONE, EQUAL, false },
-        ['\t'] ={ DONE, EQUAL, false },
-        ['\n'] ={ DONE, EQUAL, false }
+        [' '] = { DONE, EQUAL, false, false },
+        ['\t'] ={ DONE, EQUAL, false, false },
+        ['\n'] ={ DONE, EQUAL, false, false },
+        ['\0'] = { DONE, EQUAL, true, false}
+
 
     },
 
     [IN_NOTRELOP] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, false },
+        ['\0'...127] = { ERROR, INVALID, false, false },
 
         /*--[RULES]--*/
-        ['='] = { DONE, NOTEQ_RELOP, true },
-        
+        ['='] = { DONE, NOTEQ_RELOP, true, true },
+
     },
     [IN_STRING] = {
         /*--[DEFAULTING TO IN_STRING]--*/
-        ['\0'...'~'] = { IN_STRING, STRING, true },
-        ['"'] = { DONE, STRING, true },
+        ['\0'...127] = { IN_STRING, STRING, true, true },
+        ['"'] = { DONE, STRING, true, true },
+        ['\0'] = { ERROR, INVALID, true, false }
+
+    },
+    [IN_MULT_OR_COMM] = {
+
+        /*--[DEFAULTING TO ERROR]--*/
+        ['\0'...127] = { ERROR, INVALID, false, false },
+
+        /*--[DELIMITERS-error]--*/
+        //alphabetical
+        ['a'...'z'] = { DONE, MULT_PRE_ALOP, false, false },
+        ['A'...'Z'] = { DONE, MULT_PRE_ALOP, false, false },
+        ['0'...'9'] = { DONE, MULT_PRE_ALOP, false, false },
+        ['_'] = { DONE, MULT_PRE_ALOP, false, false },
+        ['$'] = { DONE, MULT_PRE_ALOP, false, false },
+        //in/out functions/arrays
+        ['('] = { DONE, MULT_PRE_ALOP, false, false },
+        [')'] = { DONE, MULT_PRE_ALOP, false, false },
+        //whitespace
+        [' '] = { DONE, MULT_PRE_ALOP, false, false },
+        ['\t'] ={ DONE, MULT_PRE_ALOP, false, false },
+        ['\n'] ={ DONE, MULT_PRE_ALOP, false, false },
+        ['\0'] = { DONE, MULT_PRE_ALOP, true, false}
 
     },
     // DONE state
@@ -244,41 +313,35 @@ LexerTableEntry lexerTable[17][128] = {
     [ERROR]= {
         /*--[GET THE REST OF THE LEXEME]--*/
         /*--[DEFAULTING TO STAY IN ERROR]--*/
-        ['\0'...'~'] = { ERROR, INVALID, true },
+        ['\0'...127] = { ERROR, INVALID, true, true },
 
         /*--[DELIMITERS-error]--*/
-        ['a'...'z'] = { DONE, INVALID, true },
-        ['A'...'Z'] = { DONE, INVALID, true },
-        ['0'...'9'] = { DONE, INVALID, true },
-        ['_'] = { DONE, INVALID, true },
-        ['$'] = { DONE, INVALID, true },
         //arithmetic
-        ['+'] = { DONE, INVALID, true }, 
-        ['-'] = { DONE, INVALID, true }, 
-        ['*'] = { DONE, INVALID, true },
-        ['/'] = { DONE, INVALID, true },
+        ['+'] = { DONE, INVALID, false, false }, 
+        ['-'] = { DONE, INVALID, false, false }, 
+        ['*'] = { DONE, INVALID, false, false },
+        ['/'] = { DONE, INVALID, false, false },
         //relational 
-        ['<'] = { DONE, INVALID, true }, 
-        ['>'] = { DONE, INVALID, true }, 
-        ['='] = { DONE, INVALID, true }, 
-        ['!'] = { DONE, INVALID, true },
-        //ponctual 
-        [';'] = { DONE, INVALID, true },
-        [','] = { DONE, INVALID, true },
+        ['<'] = { DONE, INVALID, false, false }, 
+        ['>'] = { DONE, INVALID, false, false }, 
+        ['='] = { DONE, INVALID, false, false }, 
+        ['!'] = { DONE, INVALID, false, false },
+        //punctual 
+        [';'] = { DONE, INVALID, false, false },
+        [','] = { DONE, INVALID, false, false },
         //macros
-        ['"'] = { DONE, INVALID, true },
+        ['"'] = { DONE, INVALID, false, false },
         //in/out functions/arrays
-        ['('] = { DONE, INVALID, true },
-        [')'] = { DONE, INVALID, true },
-        ['{'] = { DONE, INVALID, true },
-        ['}'] = { DONE, INVALID, true },
-        ['['] = { DONE, INVALID, true },
-        [']'] = { DONE, INVALID, true },
+        ['('] = { DONE, INVALID, false, false },
+        [')'] = { DONE, INVALID, false, false },
+        ['{'] = { DONE, INVALID, false, false },
+        ['}'] = { DONE, INVALID, false, false },
+        ['['] = { DONE, INVALID, false, false },
+        [']'] = { DONE, INVALID, false, false },
         //whitespace
-        [' '] = { DONE, INVALID, true },
-        ['\t'] ={ DONE, INVALID, true },
-        ['\n'] ={ DONE, INVALID, true }
-
+        [' '] = { DONE, INVALID, false, false },
+        ['\t'] ={ DONE, INVALID, false, false },
+        ['\n'] ={ DONE, INVALID, false, false },
 
     }
 };
@@ -311,68 +374,66 @@ char get_next_char(Buffer *buffer, FILE* file) {
     return current_char;
 }
 
+void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, TokenRecord* token){
+
+    printf(RED"AN ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR;", buffer->line_number, buffer->line_char_pos);
+
+    char ch;
+    //Continue traversing the DFA to get the error lexeme while not in a delimiter
+    while( table_entry.next_state != DONE ){
+        ch = get_next_char(buffer, stream);
+        if(ch == EOF){
+            break;
+        } 
+        table_entry = lexerTable[table_entry.next_state][ch];
+        token->lexeme[strlen(token->lexeme)] = ch;
+        token->lexeme[strlen(token->lexeme)+1] = '\0';
+    }
+    token->type = table_entry.token_type;
+    printf("LEXEME = %s", token->lexeme);
+}
+
 /*--[ get_next_token - reuses previous buffer for optimization - returns into the token ]--*/
 void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
 
     char ch;
     LexerTableEntry table_entry = { START, -1, true };
-    memset(token->lexeme, 0, sizeof token->lexeme); //clean lexeme
-
-    
-    while( table_entry.next_state != DONE && table_entry.next_state != ERROR ){ 
-
+    while( table_entry.next_state != DONE && table_entry.next_state != ERROR ){
+        if(table_entry.next_state == START) memset(token->lexeme, 0, sizeof token->lexeme);
+        
         ch = get_next_char(buffer, stream);
         //adhoc for end of file
         if(ch == EOF){
-            token->type = EOF;
-            break;
-        }
-        if(ch < 0 || ch > 127){
+            //end of file entry
+            ch = '\0'; 
+        }else if(ch < 0 || ch > 127){
             //Outside of lower ASCII range
             if(table_entry.next_state== IN_COMMENT){
                 continue;
             }else{
-                printf(RED"ERROR: character outside of ASCII range allowed");
+                indicate_error(buffer, table_entry, stream, token);
                 token->type = INVALID;
                 return;
             }
         }
-
         table_entry = lexerTable[table_entry.next_state][ch];
-
-        if (table_entry.next_state == DONE && (table_entry.token_type == COMMENT || table_entry.token_type == WHITESPACE )){
-            table_entry.next_state = START;
-            memset(token->lexeme, 0, sizeof token->lexeme); //clean lexeme
-            continue;
-        }
-
+        
         //if this whas a lookahead , do not consume it
-        if( table_entry.consumed == false ) {
+        if( table_entry.consume == false ) {
             buffer->position--;
             buffer->line_char_pos--;
-        }else{
-            token->lexeme[strlen(token->lexeme)] = ch;
-            token->lexeme[strlen(token->lexeme)+1] = '\0';
         }
-
-    }
-
-    //in error get the rest of the lexeme
-    if(table_entry.next_state == ERROR ){
-        while( table_entry.next_state != DONE ){
-            ch = get_next_char(buffer, stream);
-            if(ch == EOF){
-                token->type = EOF;
-                break;
-            } 
-            table_entry = lexerTable[table_entry.next_state][ch];
+        if( table_entry.store == true ) {
             token->lexeme[strlen(token->lexeme)] = ch;
             token->lexeme[strlen(token->lexeme)+1] = '\0';
         }
     }
 
-    
-    if((table_entry.token_type == WHITESPACE) || (table_entry.token_type == COMMENT) ) table_entry.token_type = EOF; 
+  
+    if(table_entry.next_state == ERROR ) {
+        indicate_error(buffer, table_entry, stream, token);
+        return; 
+    }
     //check if id is keyword
     if( table_entry.token_type == ID ){
         const struct keyword* key = in_word_set(token->lexeme, strlen(token->lexeme));
@@ -381,7 +442,7 @@ void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
         }
 
     }
-    if(table_entry.token_type == INVALID ) printf(RED"AN ERROR OCCURED AT %dth LINE IN THE %dth CHAR:\n LEXEME: %s", buffer->line_number, buffer->line_char_pos,token->lexeme ); //show
+    
     
     token->type = table_entry.token_type;
 }
@@ -390,25 +451,3 @@ void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
 
 
 
-/**/
-void indicate_error(Buffer* buffer){
-
-    printf(RED"AN ERROR OCCURRED AT LINE: %zu IN THE %zu-th CHAR:\n", buffer->line_number, buffer->line_char_pos);
-        
-    // Print the actual line
-    size_t line_start = 0;
-    while (line_start < buffer->loaded_size && buffer->data[line_start] != '\n') {
-        line_start++;
-    }
-    
-    size_t line_end = line_start + 1;
-    while (line_end < buffer->loaded_size && buffer->data[line_end] != '\n') {
-        line_end++;
-    }
-    // Print the error line
-    for (size_t i = line_start; i < line_end; ++i) {
-        putchar(buffer->data[i]);
-    }
-    putchar('\n');
-    
-}

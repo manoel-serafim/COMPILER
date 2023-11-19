@@ -7,7 +7,6 @@
 #include "buffer.h"
 
 
-
 /*--[TOKEN DEFINITIONS]--*/
 #define LEXEME_SIZE 256
 /*--[TOKEN ENUMS]--*/
@@ -58,7 +57,8 @@ typedef enum {
     INVALID,
     WHITESPACE,          
     COMMENT,
-    STRING
+    STRING,
+    FIN,
 } token_type;
 
 /*--[TOKEN STRUCTS]--*/
@@ -67,34 +67,6 @@ typedef struct {
     char lexeme[LEXEME_SIZE];
 } TokenRecord;
 
-
-/*--[LEXER TABLE ENUMS]--*/
-typedef enum {
-    START,
-    IN_ID,
-    IN_NUM,
-    IN_DIV_OR_COMM,
-    IN_COMMENT,
-    IN_BLOCK_COMMENT,
-    IN_LESS_OR_LEQ,
-    IN_LEQ,
-    IN_GREAT_OR_GEQ,
-    IN_GEQ,
-    IN_EQ_OR_EQRELOP,
-    IN_EQRELOP,
-    IN_NOTRELOP,
-    OUT_NOTRELOP,
-    IN_STRING,
-    DONE,
-    ERROR
-} LexerState;
-
-/*--[LEXER TABLE STRUCTS]--*/
-typedef struct {
-    LexerState next_state;
-    token_type token_type;
-    bool consumed; // Should advance input?
-} LexerTableEntry;
 
 /*--[ get_next_token - reuses previous buffer for optimization - returns into the token ]--*/
 void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token );

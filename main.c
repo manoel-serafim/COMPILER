@@ -27,14 +27,16 @@ int main(int argc, char *argv[]) {
     int count;
     do{
         get_next_token(&buffer, stream, token);
-        if(token->type == EOF){
+        if(token->type == FIN){
             break;
         }
         if(token->type == INVALID){
             return EXIT_FAILURE;
         }
         //parser here
-    }while(token->type != EOF);
+        printf("%dLEX: %s TYPE: %d\n",count, token->lexeme, token->type);
+        count++;
+    }while(token->type != FIN);
 
     
     //cleanup functions

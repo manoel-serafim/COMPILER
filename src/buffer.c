@@ -23,7 +23,7 @@ void allocate_buffer(Buffer *buffer, FILE *file) {
     buffer->loaded_size = load_buffer(buffer, file);
     buffer->position = 0;
     buffer->line_number = 1;
-    buffer->line_char_pos = 0;
+    buffer->line_char_pos = 1;
 }
 
 void deallocate_buffer(Buffer *buffer) {
