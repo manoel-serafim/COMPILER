@@ -37,7 +37,7 @@ typedef struct {
 /*--[LEXER TABLE]--*/
 // 128 because of the 128 ASCII chars
 /*--[ LexTable - using meaningfull vars not only ints ]--*/
-LexerTableEntry lexerTable[18][129] = { 
+LexerTableEntry lexerTable[18][128] = { 
     /*--[ only accepting delimiters that make sense ]--*/
     [START] = {
         /*--[DEFAULTING TO ERROR]--*/
