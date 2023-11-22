@@ -1,0 +1,13 @@
+%language=ANSI-C
+%readonly-tables
+%compare-lengths
+%includes
+%struct-type
+struct keyword { char *name; TokenType type; } 
+%%
+if,	IF,
+else,	ELSE,
+int,	INT,
+void,	VOID,
+return,	RETURN,
+while,	WHILE
