@@ -409,14 +409,14 @@ void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, T
     printf(YELLOW"\t[!] LEXEME: "RED"%s "YELLOW"[!]\n", token->lexeme);
 
 
-    /*
+
     //print the line where the error occured:
     if( fsetpos( stream, &(buffer->line_pos) ) != 0 ) {
       perror( "fsetpos error" );
     }
     load_buffer(buffer, stream);
+    printf("%s", "\t");
     while (ch != '\n' ) {
-        puts("HERE");
         ch = get_next_char(buffer, stream);
         if(buffer->position <= in_line_placement){
             printf(RED"%c"RESET, ch);
@@ -432,7 +432,7 @@ void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, T
         printf("%s", " ");
         in_line_placement--;
     }
-    puts("^]--char that caused the error");*/
+    puts("^]--char that caused the error");
     
     puts(RED"}");
 }
