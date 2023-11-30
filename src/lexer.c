@@ -170,7 +170,10 @@ LexerTableEntry lexerTable[18][128] = {
         [' '] = { DONE, DIV_PRE_ALOP, true, false },
         ['\t'] ={ DONE, DIV_PRE_ALOP, true, false },
         ['\n'] ={ DONE, DIV_PRE_ALOP, true, false },
-        ['\0'] = { DONE, DIV_PRE_ALOP, true, false}
+        ['\0'] = { DONE, DIV_PRE_ALOP, true, false},
+        //parentheses
+        ['('] = { DONE, DIV_PRE_ALOP, false }
+        
 
         
     },
@@ -217,6 +220,8 @@ LexerTableEntry lexerTable[18][128] = {
         ['\t'] ={ DONE, LESS_RELOP, true, false },
         ['\n'] ={ DONE, LESS_RELOP, true, false },
         ['\0'] = { DONE, LESS_RELOP, true, false},
+        //pharentheses
+        ['('] = { DONE, LESS_RELOP, false }
 
 
     },
@@ -241,7 +246,9 @@ LexerTableEntry lexerTable[18][128] = {
         [' '] = { DONE, GREAT_RELOP, true, false },
         ['\t'] ={ DONE, GREAT_RELOP, true, false },
         ['\n'] ={ DONE, GREAT_RELOP, true, false },
-        ['\0'] = { DONE, GREAT_RELOP, true, false}
+        ['\0'] = { DONE, GREAT_RELOP, true, false},
+        //pharentheses
+        ['('] = { DONE, GREAT_RELOP, false }
         
 
     },
@@ -266,7 +273,9 @@ LexerTableEntry lexerTable[18][128] = {
         [' '] = { DONE, EQUAL, true, false },
         ['\t'] ={ DONE, EQUAL, true, false },
         ['\n'] ={ DONE, EQUAL, true, false },
-        ['\0'] = { DONE, EQUAL, true, false}
+        ['\0'] = { DONE, EQUAL, true, false},
+        //pharentheses
+        ['('] = { DONE, EQ_RELOP, false }
 
 
     },
@@ -305,7 +314,7 @@ LexerTableEntry lexerTable[18][128] = {
         [' '] = { DONE, MULT_PRE_ALOP, true, false },
         ['\t'] ={ DONE, MULT_PRE_ALOP, true, false },
         ['\n'] ={ DONE, MULT_PRE_ALOP, true, false },
-        ['\0'] = { DONE, MULT_PRE_ALOP, true, false}
+        ['\0'] = { DONE, MULT_PRE_ALOP, true, false},
 
     },
     // DONE state

@@ -3,9 +3,9 @@ CFLAGS = -I include
 SRC_DIR = src
 BUILD_DIR = build
 
-all: cmc
+all: bin/cmc
 
-cmc: main.c $(BUILD_DIR)/lexer.o $(BUILD_DIR)/buffer.o
+bin/cmc: main.c $(BUILD_DIR)/lexer.o $(BUILD_DIR)/buffer.o
 	$(CC) -g -o $@ $< $(BUILD_DIR)/lexer.o $(BUILD_DIR)/buffer.o
 
 $(BUILD_DIR)/lexer.o: $(SRC_DIR)/lexer.c
