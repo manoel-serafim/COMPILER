@@ -1,5 +1,5 @@
 #include "include/lexer.h"
-
+#include "utils/bison/parser.tab.h"
 
 /*  [main function - returns status]  */
 int main(int argc, char *argv[]) {
@@ -25,8 +25,9 @@ int main(int argc, char *argv[]) {
 
 
     int count;
+    token_type temp;
     do{
-        get_next_token(&buffer, stream, token);
+        temp = get_next_token(&buffer, stream, token);
         if(token->type == FIN){
             break;
         }
@@ -34,7 +35,8 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
         //parser here
-        printf("%dLEX: %s TYPE: %d\n",count, token->lexeme, token->type);
+        yyparse();
+        //printf("%dLEX: %s TYPE: %d\n",count, token->lexeme, token->type);
         count++;
     }while(token->type != FIN);
 

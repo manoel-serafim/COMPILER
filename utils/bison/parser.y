@@ -1,5 +1,6 @@
 %{
 #include "../../include/lexer.h"
+#include "../../include/tree.h"
 #include <stdio.h>
 ParsingContext glob_context;
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
@@ -9,19 +10,12 @@ ParsingContext glob_context;
 
 
 %%
-/*
 program:
-    NUM YYEOF { printf("Result = %d\n"); }
-    | YYEOF/* empty */{ printf("empty = %d\n"); }
-    ;
-*/
-
-program:
-    declaration_list
+    declaration_list 
     ;
 
 declaration_list:
-    declaration_list declaration
+    declaration_list declaration 
     | declaration
     ;
 
@@ -30,9 +24,9 @@ declaration:
     | fun_declaration
     ;
 
-var-declaration:
-    type-specifier ID SEMICOL_PUNCT
-    | type-specifier ID SQUAREOP_BRACK NUM SQUARECL_BRACKET SEMICOL_PUNCT
+var_declaration:
+    type_specifier ID SEMICOL_PUNCT
+    | type_specifier ID SQUAREOP_BRACKET NUM SQUARECL_BRACKET SEMICOL_PUNCT
     ;
 
 type_specifier:
@@ -45,7 +39,7 @@ fun_declaration:
     ;
 
 parameters:
-    parameter-list
+    parameter_list
     | VOID
     ;
 
@@ -59,7 +53,7 @@ parameter:
     | type_specifier ID SQUAREOP_BRACKET SQUARECL_BRACKET
     ;
 
-compound-declaration:
+compound_declaration:
     CURLYOP_BRACKET local_declarations statement_list CURLYCL_BRACKET
     ;
 
@@ -203,4 +197,5 @@ int main(int argc, char *argv[]) {
 
 void yyerror(const char *s) {
     fprintf(stderr, "Error: %s\n", s);
+    printf("SYNTATIC ERROR: LINE:");
 }

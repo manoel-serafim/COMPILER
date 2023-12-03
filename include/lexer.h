@@ -18,6 +18,6 @@ typedef struct {
 
 
 /*--[ get_next_token - reuses previous buffer for optimization - returns into the token ]--*/
-void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token );
+token_type get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token );
 
 #endif

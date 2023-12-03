@@ -447,7 +447,7 @@ void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, T
 }
 
 /*--[ get_next_token - reuses previous buffer for optimization - returns into the token ]--*/
-void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
+token_type get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
 
     char ch;
     LexerTableEntry table_entry = { START, -1, true };
@@ -497,9 +497,6 @@ void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
     
     
     token->type = table_entry.token_type;
+
+    return token->type;
 }
-
-
-
-
-
