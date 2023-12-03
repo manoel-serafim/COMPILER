@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.5.1.  */
+/* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -31,8 +31,9 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* Undocumented macros, especially those whose name start with YY_,
-   are private implementation details.  Do not rely on them.  */
+/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
+   especially those whose name start with YY_ or yy_.  They are
+   private implementation details that can be changed or removed.  */
 
 #ifndef YY_YY_PARSER_TAB_H_INCLUDED
 # define YY_YY_PARSER_TAB_H_INCLUDED
@@ -44,42 +45,47 @@
 extern int yydebug;
 #endif
 
-/* Token type.  */
+/* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    ID = 258,
-    NUM = 259,
-    IF = 260,
-    ELSE = 261,
-    WHILE = 262,
-    RETURN = 263,
-    INT = 264,
-    VOID = 265,
-    PLUS_ALOP = 266,
-    MINUS_ALOP = 267,
-    MULT_PRE_ALOP = 268,
-    DIV_PRE_ALOP = 269,
-    EQ_RELOP = 270,
-    NOTEQ_RELOP = 271,
-    LESSEQ_RELOP = 272,
-    GREATEQ_RELOP = 273,
-    GREAT_RELOP = 274,
-    LESS_RELOP = 275,
-    EQUAL = 276,
-    CURLYOP_BRACKET = 277,
-    CURLYCL_BRACKET = 278,
-    CIRCLEOP_BRACKET = 279,
-    CIRCLECL_BRACKET = 280,
-    SQUAREOP_BRACKET = 281,
-    SQUARECL_BRACKET = 282,
-    SEMICOL_PUNCT = 283,
-    COMMA_PUNCT = 284,
-    WHITESPACE = 285,
-    COMMENT = 286,
-    STRING = 287
+    YYEMPTY = -2,
+    YYEOF = 0,                     /* "end of file"  */
+    YYerror = 256,                 /* error  */
+    YYUNDEF = 257,                 /* "invalid token"  */
+    ID = 258,                      /* ID  */
+    NUM = 259,                     /* NUM  */
+    IF = 260,                      /* IF  */
+    ELSE = 261,                    /* ELSE  */
+    WHILE = 262,                   /* WHILE  */
+    RETURN = 263,                  /* RETURN  */
+    INT = 264,                     /* INT  */
+    VOID = 265,                    /* VOID  */
+    PLUS_ALOP = 266,               /* PLUS_ALOP  */
+    MINUS_ALOP = 267,              /* MINUS_ALOP  */
+    MULT_PRE_ALOP = 268,           /* MULT_PRE_ALOP  */
+    DIV_PRE_ALOP = 269,            /* DIV_PRE_ALOP  */
+    EQ_RELOP = 270,                /* EQ_RELOP  */
+    NOTEQ_RELOP = 271,             /* NOTEQ_RELOP  */
+    LESSEQ_RELOP = 272,            /* LESSEQ_RELOP  */
+    GREATEQ_RELOP = 273,           /* GREATEQ_RELOP  */
+    GREAT_RELOP = 274,             /* GREAT_RELOP  */
+    LESS_RELOP = 275,              /* LESS_RELOP  */
+    EQUAL = 276,                   /* EQUAL  */
+    CURLYOP_BRACKET = 277,         /* CURLYOP_BRACKET  */
+    CURLYCL_BRACKET = 278,         /* CURLYCL_BRACKET  */
+    CIRCLEOP_BRACKET = 279,        /* CIRCLEOP_BRACKET  */
+    CIRCLECL_BRACKET = 280,        /* CIRCLECL_BRACKET  */
+    SQUAREOP_BRACKET = 281,        /* SQUAREOP_BRACKET  */
+    SQUARECL_BRACKET = 282,        /* SQUARECL_BRACKET  */
+    SEMICOL_PUNCT = 283,           /* SEMICOL_PUNCT  */
+    COMMA_PUNCT = 284,             /* COMMA_PUNCT  */
+    WHITESPACE = 285,              /* WHITESPACE  */
+    COMMENT = 286,                 /* COMMENT  */
+    STRING = 287                   /* STRING  */
   };
+  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
@@ -92,6 +98,8 @@ typedef int YYSTYPE;
 
 extern YYSTYPE yylval;
 
+
 int yyparse (void);
+
 
 #endif /* !YY_YY_PARSER_TAB_H_INCLUDED  */
