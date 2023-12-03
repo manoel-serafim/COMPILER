@@ -29,4 +29,5 @@ void allocate_buffer(Buffer *buffer, FILE *file) {
 void deallocate_buffer(Buffer *buffer) {
     free(buffer->data);
     buffer->data = NULL; // Set pointer to NULL after freeing
+    free(buffer);
 }

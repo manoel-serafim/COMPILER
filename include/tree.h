@@ -5,10 +5,8 @@
 #include "macros.h"     //messaging
 #include "libs.h"       //libraries
 #include "buffer.h"
-#include "globals.h"
+#include "lexer.h"
 
-/*--[TOKEN DEFINITIONS]--*/
-#define LEXEME_SIZE 256
 
 typedef struct TreeNode {
     char data[LEXEME_SIZE];

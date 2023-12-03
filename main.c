@@ -1,6 +1,8 @@
 #include "include/lexer.h"
 #include "utils/bison/parser.tab.h"
 
+ParsingContext glob_context;
+
 /*  [main function - returns status]  */
 int main(int argc, char *argv[]) {
 
@@ -10,41 +12,28 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    FILE * stream = fopen( argv[1] , "r" );
-    if (stream == NULL) {
+    glob_context.stream = fopen( argv[1] , "r" );
+    if (glob_context.stream == NULL) {
         //FOPEN ERROR
         perror(RED"fopen() error"YELLOW);
         return 1;
     }
-
-    Buffer buffer;
-    allocate_buffer(&buffer, stream);
-
-
-    TokenRecord* token = malloc(sizeof(TokenRecord)); 
+    glob_context.p_buffer = malloc(sizeof(Buffer));
+    allocate_buffer(glob_context.p_buffer, glob_context.stream);
 
 
-    int count;
-    token_type temp;
-    do{
-        temp = get_next_token(&buffer, stream, token);
-        if(token->type == FIN){
-            break;
-        }
-        if(token->type == INVALID){
-            return EXIT_FAILURE;
-        }
-        //parser here
-        yyparse();
-        //printf("%dLEX: %s TYPE: %d\n",count, token->lexeme, token->type);
-        count++;
-    }while(token->type != FIN);
+    glob_context.p_token_rec = malloc(sizeof(TokenRecord)); 
+    
+
+   
+    yyparse();
+        
 
     
     //cleanup functions
-    free(token);
-    deallocate_buffer(&buffer);
-    fclose(stream);
+    free(glob_context.p_token_rec);
+    free(glob_context.p_buffer);
+    fclose(glob_context.stream);
 
 
 

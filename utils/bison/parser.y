@@ -1,9 +1,9 @@
 %{
-#include "../../include/lexer.h"
-#include "../../include/tree.h"
+#include "lexer.h"
+#include "tree.h"
 #include <stdio.h>
-ParsingContext glob_context;
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
+void yyerror(const char *s);
 %}
 
 %token ID NUM IF ELSE WHILE RETURN INT VOID PLUS_ALOP MINUS_ALOP MULT_PRE_ALOP DIV_PRE_ALOP EQ_RELOP NOTEQ_RELOP LESSEQ_RELOP GREATEQ_RELOP GREAT_RELOP LESS_RELOP EQUAL CURLYOP_BRACKET CURLYCL_BRACKET CIRCLEOP_BRACKET CIRCLECL_BRACKET SQUAREOP_BRACKET SQUARECL_BRACKET SEMICOL_PUNCT COMMA_PUNCT WHITESPACE COMMENT STRING

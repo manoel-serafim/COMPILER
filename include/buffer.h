@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/*--[BUFFER DEFINITIONS]--*/
+/*--[BUFFER DEYYEOFITIONS]--*/
 #define BUFF_SIZE 256
 
 /*--[BUFFER STRUCTS]--*/

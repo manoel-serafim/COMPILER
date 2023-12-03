@@ -30,8 +30,10 @@
 #endif
 
 #line 6 "def.gperf"
-struct keyword { char *name; unsigned int type;};
+#include "../utils/bison/parser.tab.h"
+struct keyword { char *name; yytoken_kind_t type;};
 #include <string.h>
+
 
 #define TOTAL_KEYWORDS 6
 #define MIN_WORD_LENGTH 2
@@ -113,18 +115,18 @@ in_word_set (register const char *str, register size_t len)
     {
       {""}, {""},
 #line 8 "def.gperf"
-      {"if",	258,},
+      {"if",	IF,},
 #line 10 "def.gperf"
-      {"int",	262,},
+      {"int",	INT,},
 #line 11 "def.gperf"
-      {"void",	263,},
+      {"void",	VOID,},
 #line 13 "def.gperf"
-      {"while",	260},
+      {"while",	WHILE},
 #line 12 "def.gperf"
-      {"return",	261,},
+      {"return",	RETURN,},
       {""}, {""},
 #line 9 "def.gperf"
-      {"else",	259,}
+      {"else",	ELSE,}
     };
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)

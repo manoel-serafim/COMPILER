@@ -69,11 +69,11 @@
 /* First part of user prologue.  */
 #line 1 "parser.y"
 
-#include "../../include/lexer.h"
-#include "../../include/tree.h"
+#include "lexer.h"
+#include "tree.h"
 #include <stdio.h>
-ParsingContext glob_context;
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
+void yyerror(const char *s);
 
 #line 79 "parser.tab.c"
 
