@@ -1,6 +1,5 @@
 Terminals unused in grammar
 
-    ID
     IF
     ELSE
     WHILE
@@ -31,20 +30,29 @@ Terminals unused in grammar
     STRING
 
 
+Rules useless in parser due to conflicts
+
+    0 $accept: program $end
+
+
 Grammar
 
     0 $accept: program $end
 
-    1 program: NUM $end
-    2        | $end
+    1 program: ε
+    2        | program token
+
+    3 token: ID
+    4      | NUM
+    5      | $end
 
 
 Terminals, with rules where they appear
 
-    $end (0) 0 1 2
+    $end (0) 0 5
     error (256)
-    ID (258)
-    NUM (259) 1
+    ID (258) 3
+    NUM (259) 4
     IF (260)
     ELSE (261)
     WHILE (262)
@@ -81,49 +89,57 @@ Nonterminals, with rules where they appear
         on left: 0
     program (34)
         on left: 1 2
-        on right: 0
+        on right: 0 2
+    token (35)
+        on left: 3 4 5
+        on right: 2
 
 
 State 0
 
     0 $accept: • program $end
 
-    $end  shift, and go to state 1
-    NUM   shift, and go to state 2
+    $default  reduce using rule 1 (program)
 
-    program  go to state 3
+    program  go to state 1
 
 
 State 1
 
-    2 program: $end •
+    0 $accept: program • $end
+    2 program: program • token
 
-    $default  reduce using rule 2 (program)
+    $end  shift, and go to state 2
+    ID    shift, and go to state 3
+    NUM   shift, and go to state 4
+
+    token  go to state 5
 
 
 State 2
 
-    1 program: NUM • $end
+    0 $accept: program $end •
+    5 token: $end •
 
-    $end  shift, and go to state 4
+    $default  reduce using rule 5 (token)
 
 
 State 3
 
-    0 $accept: program • $end
+    3 token: ID •
 
-    $end  shift, and go to state 5
+    $default  reduce using rule 3 (token)
 
 
 State 4
 
-    1 program: NUM $end •
+    4 token: NUM •
 
-    $default  reduce using rule 1 (program)
+    $default  reduce using rule 4 (token)
 
 
 State 5
 
-    0 $accept: program $end •
+    2 program: program token •
 
-    $default  accept
+    $default  reduce using rule 2 (program)

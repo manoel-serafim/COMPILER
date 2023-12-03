@@ -9,10 +9,18 @@ ParsingContext glob_context;
 
 
 %%
+
 program:
-    NUM YYEOF { printf("Result = %d\n"); }
-    | YYEOF/* empty */{ printf("empty = %d\n"); }
+    program token
+    | token
     ;
+
+token:
+    ID { printf("ID found: %s\n", glob_context.p_token_rec->id); }
+    | NUM { printf("Number: %d\n", glob_context.p_token_rec->num); } // Assuming num is a field for number in TokenRecord
+    | YYEOF { printf("End of file\n"); }
+    ;
+
 %%
 
 

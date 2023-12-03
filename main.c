@@ -1,49 +1,48 @@
 #include "include/lexer.h"
 
+ParsingContext glob_context;
 
 /*  [main function - returns status]  */
 int main(int argc, char *argv[]) {
-
+    
     if (argc != 2) {
         //NOT ENOUGH ARGS
         printf(RED"Usage: %s <filename>\n", argv[0]);
         return 1;
     }
 
-    FILE * stream = fopen( argv[1] , "r" );
-    if (stream == NULL) {
+    glob_context.stream = fopen( argv[1] , "r" );
+    if (glob_context.stream == NULL) {
         //FOPEN ERROR
         perror(RED"fopen() error"YELLOW);
         return 1;
     }
-
-    Buffer buffer;
-    allocate_buffer(&buffer, stream);
-
-
-    TokenRecord* token = malloc(sizeof(TokenRecord)); 
+    glob_context.p_buffer = malloc(sizeof(Buffer));
+    allocate_buffer(glob_context.p_buffer, glob_context.stream);
 
 
-    int count;
+    glob_context.p_token_rec = malloc(sizeof(TokenRecord)); 
+
+
+    int count, next_tok;
     do{
-        get_next_token(&buffer, stream, token);
-        if(token->type == FIN){
+        next_tok = get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec);
+        if(next_tok == YYEOF){
             break;
         }
-        if(token->type == INVALID){
+        if(next_tok == YYerror){
             return EXIT_FAILURE;
         }
         //parser here
-        printf("%dLEX: %s TYPE: %d\n",count, token->lexeme, token->type);
+        printf("%dLEX: %s TYPE: %d\n",count, glob_context.p_token_rec->lexeme, next_tok);
         count++;
-    }while(token->type != FIN);
+    }while(next_tok != YYEOF);
 
     
-    //cleanup functions
-    free(token);
-    deallocate_buffer(&buffer);
-    fclose(stream);
-
+    deallocate_buffer(glob_context.p_buffer);
+    free(glob_context.p_buffer);
+    free(glob_context.p_token_rec);
+    fclose(glob_context.stream);
 
 
     return EXIT_SUCCESS;

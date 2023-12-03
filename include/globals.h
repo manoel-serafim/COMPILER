@@ -1,7 +1,6 @@
 
 #ifndef __GLOBALS__
 #define __GLOBALS__
-
 /*--[TOKEN ENUMS]--*/
 typedef enum {
     // Identifiers
@@ -47,11 +46,11 @@ typedef enum {
     COMMA_PUNCT,
     
     // Special
-    INVALID,
+    YYerror,
     WHITESPACE,          
     COMMENT,
     STRING,
-    FIN,
+    YYEOF,
 } token_type;
 
 

@@ -28,7 +28,7 @@ typedef enum {
 /*--[LEXER TABLE STRUCTS]--*/
 typedef struct {
     LexerState next_state;
-    token_type token_type;
+    yytoken_kind_t token_type;
     bool consume; // Should advance input?
     bool store;
 } LexerTableEntry;
@@ -41,7 +41,7 @@ LexerTableEntry lexerTable[18][128] = {
     /*--[ only accepting delimiters that make sense ]--*/
     [START] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...127] = { ERROR, INVALID, false, false },
+        ['\0'...127] = { ERROR, YYerror, false, false },
         /*--[RULES]--*/
         ['a'...'z'] = { IN_ID, ID, true, true },
         ['A'...'Z'] = { IN_ID, ID, true, true },
@@ -68,14 +68,14 @@ LexerTableEntry lexerTable[18][128] = {
         [' '] = { START, WHITESPACE, true, false },
         ['\t'] = { START, WHITESPACE, true, false },
         ['\n'] = { START, WHITESPACE, true, false },
-        ['\0'] = {DONE, FIN, true, false }, //finished
+        ['\0'] = {DONE, YYEOF, true, false }, //finished
 
     },
 
     // IN_ID state
     [IN_ID] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...127] = { ERROR, INVALID, false, false },
+        ['\0'...127] = { ERROR, YYerror, false, false },
 
         /*--[RULES]--*/
         ['a'...'z'] = { IN_ID, ID, true, true },
@@ -117,7 +117,7 @@ LexerTableEntry lexerTable[18][128] = {
     // IN_NUM state
     [IN_NUM] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...127] = { ERROR, INVALID, false, false },
+        ['\0'...127] = { ERROR, YYerror, false, false },
 
         /*--[RULES]--*/
         ['0'...'9'] = { IN_NUM, NUM, true, true },
@@ -154,7 +154,7 @@ LexerTableEntry lexerTable[18][128] = {
     // IN_DIV_OR_COMM 
     [IN_DIV_OR_COMM] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...127] = { ERROR, INVALID, false, false }, 
+        ['\0'...127] = { ERROR, YYerror, false, false }, 
         
         /*--[RULES]--*/
         ['*'] = { IN_COMMENT, COMMENT, true, true },
@@ -184,7 +184,7 @@ LexerTableEntry lexerTable[18][128] = {
 
         /*--[RULES]--*/
         ['*'] = { IN_BLOCK_COMMENT, COMMENT, true, true },
-        ['\0'] = { ERROR, INVALID, true, false}
+        ['\0'] = { ERROR, YYerror, true, false}
         
     },
     // IN_BLOCK_COMMENT state
@@ -194,14 +194,14 @@ LexerTableEntry lexerTable[18][128] = {
         /*--[RULES]--*/
         ['/'] = { START, COMMENT, true, true }, // Go back to the initial state to get the next token
         ['*'] = { IN_BLOCK_COMMENT, COMMENT, true, true },
-        ['\0'] = { ERROR, INVALID, true, false}
+        ['\0'] = { ERROR, YYerror, true, false}
 
     },
 
     // IN_LESS_OR_LEQ state
     [IN_LESS_OR_LEQ] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...127] = { ERROR, INVALID, false, false },
+        ['\0'...127] = { ERROR, YYerror, false, false },
 
         /*--[RULES]--*/
         ['='] = { DONE, LESSEQ_RELOP, true, true },
@@ -228,7 +228,7 @@ LexerTableEntry lexerTable[18][128] = {
     // IN_LESS_OR_LEQ state
     [IN_GREAT_OR_GEQ] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...127] = { ERROR, INVALID, false, false },
+        ['\0'...127] = { ERROR, YYerror, false, false },
 
         /*--[RULES]--*/
         ['='] = { DONE, GREATEQ_RELOP, true, true },
@@ -255,7 +255,7 @@ LexerTableEntry lexerTable[18][128] = {
     // IN_EQRELOP
     [IN_EQ_OR_EQRELOP] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...127] = { ERROR, INVALID, false, false },
+        ['\0'...127] = { ERROR, YYerror, false, false },
 
         /*--[RULES]--*/
         ['='] = { DONE, EQ_RELOP, true, true },
@@ -282,7 +282,7 @@ LexerTableEntry lexerTable[18][128] = {
 
     [IN_NOTRELOP] = {
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...127] = { ERROR, INVALID, false, false },
+        ['\0'...127] = { ERROR, YYerror, false, false },
 
         /*--[RULES]--*/
         ['='] = { DONE, NOTEQ_RELOP, true, true },
@@ -292,13 +292,13 @@ LexerTableEntry lexerTable[18][128] = {
         /*--[DEFAULTING TO IN_STRING]--*/
         ['\0'...127] = { IN_STRING, STRING, true, true },
         ['"'] = { DONE, STRING, true, true },
-        ['\0'] = { ERROR, INVALID, true, false }
+        ['\0'] = { ERROR, YYerror, true, false }
 
     },
     [IN_MULT_OR_COMM] = {
 
         /*--[DEFAULTING TO ERROR]--*/
-        ['\0'...127] = { ERROR, INVALID, false, false },
+        ['\0'...127] = { ERROR, YYerror, false, false },
 
         /*--[DELIMITERS-error]--*/
         //alphabetical
@@ -322,36 +322,36 @@ LexerTableEntry lexerTable[18][128] = {
     [ERROR]= {
         /*--[GET THE REST OF THE LEXEME]--*/
         /*--[DEFAULTING TO STAY IN ERROR]--*/
-        ['\0'...127] = { ERROR, INVALID, true, true },
+        ['\0'...127] = { ERROR, YYerror, true, true },
 
         /*--[DELIMITERS-error]--*/
         //arithmetic
-        ['+'] = { DONE, INVALID, false, false }, 
-        ['-'] = { DONE, INVALID, false, false }, 
-        ['*'] = { DONE, INVALID, false, false },
-        ['/'] = { DONE, INVALID, false, false },
+        ['+'] = { DONE, YYerror, false, false }, 
+        ['-'] = { DONE, YYerror, false, false }, 
+        ['*'] = { DONE, YYerror, false, false },
+        ['/'] = { DONE, YYerror, false, false },
         //relational 
-        ['<'] = { DONE, INVALID, false, false }, 
-        ['>'] = { DONE, INVALID, false, false }, 
-        ['='] = { DONE, INVALID, false, false }, 
-        ['!'] = { DONE, INVALID, false, false },
+        ['<'] = { DONE, YYerror, false, false }, 
+        ['>'] = { DONE, YYerror, false, false }, 
+        ['='] = { DONE, YYerror, false, false }, 
+        ['!'] = { DONE, YYerror, false, false },
         //punctual 
-        [';'] = { DONE, INVALID, false, false },
-        [','] = { DONE, INVALID, false, false },
+        [';'] = { DONE, YYerror, false, false },
+        [','] = { DONE, YYerror, false, false },
         //macros
-        ['"'] = { DONE, INVALID, false, false },
+        ['"'] = { DONE, YYerror, false, false },
         //in/out functions/arrays
-        ['('] = { DONE, INVALID, false, false },
-        [')'] = { DONE, INVALID, false, false },
-        ['{'] = { DONE, INVALID, false, false },
-        ['}'] = { DONE, INVALID, false, false },
-        ['['] = { DONE, INVALID, false, false },
-        [']'] = { DONE, INVALID, false, false },
+        ['('] = { DONE, YYerror, false, false },
+        [')'] = { DONE, YYerror, false, false },
+        ['{'] = { DONE, YYerror, false, false },
+        ['}'] = { DONE, YYerror, false, false },
+        ['['] = { DONE, YYerror, false, false },
+        [']'] = { DONE, YYerror, false, false },
         //whitespace
-        [' '] = { DONE, INVALID, true, false },
-        ['\t'] ={ DONE, INVALID, true, false },
-        ['\n'] ={ DONE, INVALID, true, false },
-        ['\0'] = { DONE, INVALID, false, false}
+        [' '] = { DONE, YYerror, true, false },
+        ['\t'] ={ DONE, YYerror, true, false },
+        ['\n'] ={ DONE, YYerror, true, false },
+        ['\0'] = { DONE, YYerror, false, false}
 
     }
 };
@@ -395,7 +395,7 @@ char unget_next_char( Buffer* buffer){
 }
 
 void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, TokenRecord* token){
-    puts(RED"--[ LEXICAL ERROR ]--");
+    puts(RED"__________________________________________[ LEXICAL ERROR ]_________________________________________");
     int in_line_placement = buffer->line_char_pos;
     fpos_t line_placement = buffer->line_pos; 
     printf(CYN"\t[!] THE ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR [!]\n"RESET, buffer->line_number, buffer->line_char_pos);
@@ -415,39 +415,14 @@ void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, T
         }
     }
     token->type = table_entry.token_type;
+
+
     printf(YELLOW"\t[!] LEXEME: "RED"%s "YELLOW"[!]\n", token->lexeme);
-
-
-
-    //print the line where the error occured:
-    if( fsetpos( stream, &(buffer->line_pos) ) != 0 ) {
-      perror( "fsetpos error" );
-    }
-    load_buffer(buffer, stream);
-    printf("%s", "\t");
-    while (ch != '\n' ) {
-        ch = get_next_char(buffer, stream);
-        if(buffer->position <= in_line_placement){
-            printf(RED"%c"RESET, ch);
-        }else if(buffer->position < in_line_placement+strlen(token->lexeme)){
-            printf(YELLOW"%c"RESET, ch);
-        }else{
-            printf("%c",ch);
-        }
-    }
-    //indicator
-    printf("%s","\t");
-    while(in_line_placement-1 > 0){
-        printf("%s", " ");
-        in_line_placement--;
-    }
-    puts("^]--char that caused the error");
-    
-    puts(RED"}");
+    puts(RED"____________________________________________________________________________________________________");
 }
 
 /*--[ get_next_token - reuses previous buffer for optimization - returns into the token ]--*/
-void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
+int get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
 
     char ch;
     LexerTableEntry table_entry = { START, -1, true };
@@ -465,8 +440,8 @@ void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
                 continue;
             }else{
                 indicate_error(buffer, table_entry, stream, token);
-                token->type = INVALID;
-                return;
+                token->type = YYerror;
+                return YYerror;
             }
         }
         table_entry = lexerTable[table_entry.next_state][ch];
@@ -484,7 +459,7 @@ void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
   
     if(table_entry.next_state == ERROR ) {
         indicate_error(buffer, table_entry, stream, token);
-        return; 
+        return YYerror; 
     }
     //check if id is keyword
     if( table_entry.token_type == ID ){
@@ -495,8 +470,8 @@ void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
 
     }
     
-    
     token->type = table_entry.token_type;
+    return table_entry.token_type;
 }
 
 

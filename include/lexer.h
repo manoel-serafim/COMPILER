@@ -5,19 +5,26 @@
 #include "macros.h"     //messaging
 #include "libs.h"       //libraries
 #include "buffer.h"
-#include "globals.h"
+#include "parser.tab.h"
 
-/*--[TOKEN DEFINITIONS]--*/
+/*--[TOKEN DEYYEOFITIONS]--*/
 #define LEXEME_SIZE 256
 
 /*--[TOKEN STRUCTS]--*/
 typedef struct {
-    token_type type;
+    yytoken_kind_t type;
     char lexeme[LEXEME_SIZE];
 } TokenRecord;
 
+/*--[GLOBAL STRUCTURES]--*/
+typedef struct {
+    Buffer* p_buffer;
+    FILE* stream;
+    TokenRecord* p_token_rec;
+} ParsingContext;
+
 
 /*--[ get_next_token - reuses previous buffer for optimization - returns into the token ]--*/
-void get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token );
+int get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token );
 
 #endif
