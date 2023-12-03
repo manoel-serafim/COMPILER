@@ -38,7 +38,7 @@ typedef struct {
 // 128 because of the 128 ASCII chars
 /*--[ LexTable - using meaningfull vars not only ints ]--*/
 LexerTableEntry lexerTable[18][128] = { 
-    /*--[ only accepting delimiters that make sense ]--*/
+    /*/*--[ only accepting delimiters that make sense ]--*/
     [START] = {
         /*--[DEFAULTING TO ERROR]--*/
         ['\0'...127] = { ERROR, YYerror, false, false },
@@ -51,7 +51,7 @@ LexerTableEntry lexerTable[18][128] = {
         ['/'] = { IN_DIV_OR_COMM, DIV_PRE_ALOP, true, true }, 
         ['+'] = { DONE, PLUS_ALOP, true, true }, 
         ['-'] = { DONE, MINUS_ALOP, true, true }, 
-        ['*'] = { DONE, IN_MULT_OR_COMM, true, true }, 
+        ['*'] = { IN_MULT_OR_COMM, MULT_PRE_ALOP, true, true }, 
         ['<'] = { IN_LESS_OR_LEQ, LESS_RELOP, true, true }, 
         ['>'] = { IN_GREAT_OR_GEQ, GREAT_RELOP, true, true }, 
         ['='] = { IN_EQ_OR_EQRELOP, EQUAL, true, true }, 
@@ -395,7 +395,7 @@ char unget_next_char( Buffer* buffer){
 }
 
 void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, TokenRecord* token){
-    puts(RED"--[ LEXICAL ERROR ]--");
+    puts(RED"__________________________________________[ LEXICAL ERROR ]_________________________________________");
     int in_line_placement = buffer->line_char_pos;
     fpos_t line_placement = buffer->line_pos; 
     printf(CYN"\t[!] THE ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR [!]\n"RESET, buffer->line_number, buffer->line_char_pos);
@@ -415,35 +415,10 @@ void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, T
         }
     }
     token->type = table_entry.token_type;
+
+
     printf(YELLOW"\t[!] LEXEME: "RED"%s "YELLOW"[!]\n", token->lexeme);
-
-
-
-    //print the line where the error occured:
-    if( fsetpos( stream, &(buffer->line_pos) ) != 0 ) {
-      perror( "fsetpos error" );
-    }
-    load_buffer(buffer, stream);
-    printf("%s", "\t");
-    while (ch != '\n' ) {
-        ch = get_next_char(buffer, stream);
-        if(buffer->position <= in_line_placement){
-            printf(RED"%c"RESET, ch);
-        }else if(buffer->position < in_line_placement+strlen(token->lexeme)){
-            printf(YELLOW"%c"RESET, ch);
-        }else{
-            printf("%c",ch);
-        }
-    }
-    //indicator
-    printf("%s","\t");
-    while(in_line_placement-1 > 0){
-        printf("%s", " ");
-        in_line_placement--;
-    }
-    puts("^]--char that caused the error");
-    
-    puts(RED"}");
+    puts(RED"____________________________________________________________________________________________________");
 }
 
 /*--[ get_next_token - reuses previous buffer for optimization - returns into the token ]--*/

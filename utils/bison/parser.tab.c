@@ -71,11 +71,12 @@
 
 #include "lexer.h"
 #include "tree.h"
+#include "macros.h"
 #include <stdio.h>
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
 void yyerror(const char *s);
 
-#line 79 "parser.tab.c"
+#line 80 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -554,13 +555,13 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    14,    14,    18,    19,    23,    24,    28,    29,    33,
-      34,    38,    42,    43,    47,    48,    52,    53,    57,    61,
-      62,    66,    67,    71,    72,    73,    74,    75,    79,    79,
-      83,    84,    88,    92,    93,    97,    98,   102,   103,   107,
-     108,   112,   113,   114,   115,   116,   117,   121,   122,   126,
-     127,   131,   132,   136,   137,   141,   142,   143,   144,   148,
-     152,   153,   157,   158
+       0,    15,    15,    19,    20,    24,    25,    29,    30,    34,
+      35,    39,    43,    44,    48,    49,    53,    54,    58,    62,
+      63,    67,    68,    72,    73,    74,    75,    76,    80,    80,
+      84,    85,    89,    93,    94,    98,    99,   103,   104,   108,
+     109,   113,   114,   115,   116,   117,   118,   122,   123,   127,
+     128,   132,   133,   137,   138,   142,   143,   144,   145,   149,
+     153,   154,   158,   159
 };
 #endif
 
@@ -1194,7 +1195,7 @@ yyreduce:
   switch (yyn)
     {
 
-#line 1198 "parser.tab.c"
+#line 1199 "parser.tab.c"
 
       default: break;
     }
@@ -1387,10 +1388,55 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 160 "parser.y"
+#line 161 "parser.y"
+
+
+const char* yytokentypeToString(enum yytokentype token) {
+    switch (token) {
+        case YYEMPTY: return "YYEMPTY";
+        case YYEOF: return "YYEOF";
+        case YYerror: return "YYerror";
+        case YYUNDEF: return "YYUNDEF";
+        case ID: return "ID";
+        case NUM: return "NUM";
+        case IF: return "IF";
+        case ELSE: return "ELSE";
+        case WHILE: return "WHILE";
+        case RETURN: return "RETURN";
+        case INT: return "INT";
+        case VOID: return "VOID";
+        case PLUS_ALOP: return "PLUS_ALOP";
+        case MINUS_ALOP: return "MINUS_ALOP";
+        case MULT_PRE_ALOP: return "MULT_PRE_ALOP";
+        case DIV_PRE_ALOP: return "DIV_PRE_ALOP";
+        case EQ_RELOP: return "EQ_RELOP";
+        case NOTEQ_RELOP: return "NOTEQ_RELOP";
+        case LESSEQ_RELOP: return "LESSEQ_RELOP";
+        case GREATEQ_RELOP: return "GREATEQ_RELOP";
+        case GREAT_RELOP: return "GREAT_RELOP";
+        case LESS_RELOP: return "LESS_RELOP";
+        case EQUAL: return "EQUAL";
+        case CURLYOP_BRACKET: return "CURLYOP_BRACKET";
+        case CURLYCL_BRACKET: return "CURLYCL_BRACKET";
+        case CIRCLEOP_BRACKET: return "CIRCLEOP_BRACKET";
+        case CIRCLECL_BRACKET: return "CIRCLECL_BRACKET";
+        case SQUAREOP_BRACKET: return "SQUAREOP_BRACKET";
+        case SQUARECL_BRACKET: return "SQUARECL_BRACKET";
+        case SEMICOL_PUNCT: return "SEMICOL_PUNCT";
+        case COMMA_PUNCT: return "COMMA_PUNCT";
+        case WHITESPACE: return "WHITESPACE";
+        case COMMENT: return "COMMENT";
+        case STRING: return "STRING";
+        default: return "Unknown token";
+    }
+}
 
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Error: %s\n", s);
-    printf("SYNTATIC ERROR: LINE:");
+    puts(RED"__________________________________________[ SYNTATIC ERROR ]_________________________________________");
+    int in_line_placement = (glob_context.p_buffer)->line_char_pos;
+    fpos_t line_placement = (glob_context.p_buffer)->line_pos;
+    printf(CYN"\t[!] THE ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR [!]\n"RESET, (glob_context.p_buffer)->line_number, (glob_context.p_buffer)->line_char_pos);
+    printf(YELLOW"\t[!] TOKEN LEXEME: "RED"%s "YELLOW"TOKEN TYPE: "RED"%s "YELLOW"[!]\n", (glob_context.p_token_rec)->lexeme, yytokentypeToString((glob_context.p_token_rec)->type));
+    puts(RED"____________________________________________________________________________________________________");
 }
