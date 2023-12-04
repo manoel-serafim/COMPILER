@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     
    
     syntax_t_node* syntax_root = parse();
-    printf("p ->>> %d", syntax_root);
+    print_syntax_tree(syntax_root);
         
     /*printar arvore*/
     

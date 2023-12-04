@@ -462,7 +462,7 @@ argument_list:
 number:
     NUM
     {
-        $$ = new_exp_node(CONST_EK);
+        $$ = new_exp_node(CONST_T);
         $$->attr.val = atoi((glob_context.p_token_rec)->lexeme);
     }
 
@@ -474,7 +474,7 @@ identificator:
     }
 %%
 
-const char* yytokentypeToString(enum yytokentype token) {
+const char* yytokentype_to_string(enum yytokentype token) {
     switch (token) {
         case YYEMPTY: return "YYEMPTY";
         case YYEOF: return "YYEOF";
@@ -521,7 +521,7 @@ void yyerror(char* err) {
     fpos_t line_placement = (glob_context.p_buffer)->line_pos;
     printf(RED"\t [!][!]message: %s"RESET, err);
     printf(CYN"\t[!] THE ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR [!]\n"RESET, (glob_context.p_buffer)->line_number, (glob_context.p_buffer)->line_char_pos);
-    printf(YELLOW"\t[!] TOKEN LEXEME: "RED"%s "YELLOW"TOKEN TYPE: "RED"%s "YELLOW"[!]\n", (glob_context.p_token_rec)->lexeme, yytokentypeToString((glob_context.p_token_rec)->type));
+    printf(YELLOW"\t[!] TOKEN LEXEME: "RED"%s "YELLOW"TOKEN TYPE: "RED"%s "YELLOW"[!]\n", (glob_context.p_token_rec)->lexeme, yytokentype_to_string((glob_context.p_token_rec)->type));
     puts(RED"____________________________________________________________________________________________________"RESET);
 }
 
