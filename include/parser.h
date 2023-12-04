@@ -35,4 +35,7 @@ typedef struct node
     
 } sintax_t_node;
 
+sintax_t_node* new_stmt_node(stmt_type stmt_type);
+sintax_t_node* new_exp_node(exp_identifier exp_id);
+
 #endif

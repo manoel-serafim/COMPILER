@@ -1,7 +1,5 @@
 %{
-#include "lexer.h"
-#include "tree.h"
-#include "macros.h"
+#include <parser.h>
 #include <stdio.h>
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
 void yyerror(char * err);

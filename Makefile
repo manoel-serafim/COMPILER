@@ -17,7 +17,7 @@ $(BUILD_DIR)/parser.tab.o: $(BISON_DIR)/parser.tab.c
 	$(CC) -c $< -o $@ $(CFLAGS) 
 
 clean:
-	rm -f bin/cmc $(BUILD_DIR)/*.o $(BISON_DIR)/parser.tab.* $(BISON_DIR)/parse.output
+	rm -f bin/cmc $(BUILD_DIR)/*.o 
 
 test: $(wildcard utils/samples/*)
 	@echo "Running tests..."
