@@ -51,11 +51,11 @@ char* cp_str(char s[]){
 const char* exp_type_to_str(exp_type type){
     switch(type){
         case INT_T:
-            return "INTERGER";
+            return "integer";
         case VOID_T:
-            return "VOID";
+            return "void";
         case CONST_T:
-            return "CONSTANT";
+            return "constant";
         default:
             return "UNKNOWN";
     }
@@ -94,7 +94,7 @@ void print_syntax_tree (syntax_t_node* root){
                     printf("VARIABLE DECLARATION: \"%s\" \n", root->attr.content);
                     break;
                 case VECT_SK:
-                    puts("VECTOR DECLARATION");
+                    printf("VECTOR DECLARATION OF SIZE: %d\n", root->attr.size);
                     break;
                 case FUNCT_SK:
                     printf("FUNCTION: \"%s\" \n", root->attr.content);
@@ -115,13 +115,16 @@ void print_syntax_tree (syntax_t_node* root){
                     printf("IDENTIFIER: \"%s\"\n", root->attr.content);
                     break;
                 case TYPE_EK:
-                    printf("TYPE %s\n", exp_type_to_str(root->has.exp.type));
+                    printf("TYPE: %s\n", exp_type_to_str(root->has.exp.type));
                     break;
                 case VECT_ID_EK:
-                    puts("VECTOR EXPRESSION");
+                    printf("VECTOR EXPRESSION: %s\n", root->attr.content);
                     break;
                 case FUNCT_EK:
                     puts("FUNCTION DECLARATION");
+                    break;
+                case NUM_EK:
+                    printf("NUMBER : %d\n", root->attr.val);
                     break;
                 default:
                     puts("UNKNOWN EXPRESSION KIND");
@@ -136,9 +139,5 @@ void print_syntax_tree (syntax_t_node* root){
         root = root->sibling;
     }
     SUB_INDENT;
-    
-
-
-    
 }
 

@@ -565,12 +565,12 @@ static const yytype_int8 yytranslate[] =
 static const yytype_int16 yyrline[] =
 {
        0,    22,    22,    26,    39,    46,    50,    57,    65,    76,
-      83,    93,   105,   109,   114,   127,   134,   139,   148,   161,
-     165,   169,   174,   187,   194,   207,   214,   218,   222,   226,
-     230,   237,   241,   246,   252,   262,   271,   275,   283,   289,
-     296,   300,   309,   315,   322,   327,   332,   337,   342,   347,
-     355,   361,   368,   373,   381,   387,   394,   399,   407,   411,
-     415,   419,   426,   434,   443,   456,   463,   470
+      82,    91,   103,   107,   112,   125,   132,   137,   146,   159,
+     163,   167,   172,   185,   192,   205,   212,   216,   220,   224,
+     228,   235,   239,   244,   250,   260,   269,   273,   281,   287,
+     294,   298,   307,   313,   320,   325,   330,   335,   340,   345,
+     353,   359,   366,   371,   379,   385,   392,   397,   405,   409,
+     413,   417,   424,   432,   441,   454,   461,   469
 };
 #endif
 
@@ -651,7 +651,7 @@ static const yytype_int8 yydefact[] =
       59,    39,    43,    51,    55,    60,    61,    40,     0,     0,
       36,     0,     0,     0,    19,    22,     0,    20,    24,    31,
        0,    52,    53,    44,    45,    46,    47,    48,    49,     0,
-       0,    56,    57,     0,     0,     0,     0,     0,    37,    58,
+       0,    57,    56,     0,     0,     0,     0,     0,    37,    58,
       18,    38,    59,    42,    50,    54,    63,    65,     0,     0,
        0,     0,    62,     0,    41,    33,    35,    64,     0,    34
 };
@@ -1291,24 +1291,22 @@ yyreduce:
         //found leaf structure -semantic value of node
         yyval=new_exp_node(TYPE_EK); //create new exp node
         yyval->has.exp.type=INT_T;
-        yyval->attr.content = "INTERGER";
     }
-#line 1297 "parser.tab.c"
+#line 1296 "parser.tab.c"
     break;
 
   case 10: /* type_specifier: VOID  */
-#line 84 "parser.y"
+#line 83 "parser.y"
     {
         //found leaf structure -semantic value of node
         yyval=new_exp_node(TYPE_EK); //create new void exp node
         yyval->has.exp.type=VOID_T;
-        yyval->attr.content = "VOID";
     }
-#line 1308 "parser.tab.c"
+#line 1306 "parser.tab.c"
     break;
 
   case 11: /* fun_declaration: type_specifier identificator CIRCLEOP_BRACKET parameters CIRCLECL_BRACKET compound_declaration  */
-#line 94 "parser.y"
+#line 92 "parser.y"
     {
         yyval = yyvsp[-5]; //set semantic value to type spec, it will have a node for the specific type
         yyval->child[0] = yyvsp[-4]; //child + left = identificator (name of func)
@@ -1317,25 +1315,25 @@ yyreduce:
         yyvsp[-4]->has.stmt = FUNCT_SK; // this statement is a function
         yyvsp[-4]->type = STMT_T; //function declaration statement
     }
-#line 1321 "parser.tab.c"
+#line 1319 "parser.tab.c"
     break;
 
   case 12: /* parameters: parameter_list  */
-#line 106 "parser.y"
+#line 104 "parser.y"
     {
       yyval = yyvsp[0]; //set semantic value to get the parameter declarations
     }
-#line 1329 "parser.tab.c"
+#line 1327 "parser.tab.c"
     break;
 
   case 13: /* parameters: VOID  */
-#line 110 "parser.y"
+#line 108 "parser.y"
     { /*do nothing*/ }
-#line 1335 "parser.tab.c"
+#line 1333 "parser.tab.c"
     break;
 
   case 14: /* parameter_list: parameter_list COMMA_PUNCT parameter  */
-#line 115 "parser.y"
+#line 113 "parser.y"
     {
         YYSTYPE temp = yyvsp[-2]; // temp tree node of param list
         if(temp == NULL){
@@ -1348,38 +1346,38 @@ yyreduce:
             yyval = yyvsp[-2]; //get node from parameter_list
         }
     }
-#line 1352 "parser.tab.c"
+#line 1350 "parser.tab.c"
     break;
 
   case 15: /* parameter_list: parameter  */
-#line 128 "parser.y"
+#line 126 "parser.y"
     {
         yyval = yyvsp[0]; //get node from parameter
     }
-#line 1360 "parser.tab.c"
+#line 1358 "parser.tab.c"
     break;
 
   case 16: /* parameter: type_specifier identificator  */
-#line 135 "parser.y"
+#line 133 "parser.y"
     {
         yyval = yyvsp[-1]; // get node from spec
         yyval->child[0] = yyvsp[0]; // the identificator is the left child of the type spec
     }
-#line 1369 "parser.tab.c"
+#line 1367 "parser.tab.c"
     break;
 
   case 17: /* parameter: type_specifier identificator SQUAREOP_BRACKET SQUARECL_BRACKET  */
-#line 140 "parser.y"
+#line 138 "parser.y"
     {
         yyval = yyvsp[-3]; //get node from spec
         yyval->child[0] = yyvsp[-2]; //identificator is in left child
         yyvsp[-2]->has.exp.kind = VECT_ID_EK;
     }
-#line 1379 "parser.tab.c"
+#line 1377 "parser.tab.c"
     break;
 
   case 18: /* compound_declaration: CURLYOP_BRACKET local_declarations statement_list CURLYCL_BRACKET  */
-#line 149 "parser.y"
+#line 147 "parser.y"
     {
         YYSTYPE temp = yyvsp[-2];
         if(temp == NULL){
@@ -1392,33 +1390,33 @@ yyreduce:
             yyval = yyvsp[-2]; //get node from parameter_list
         }
     }
-#line 1396 "parser.tab.c"
+#line 1394 "parser.tab.c"
     break;
 
   case 19: /* compound_declaration: CURLYOP_BRACKET local_declarations CURLYCL_BRACKET  */
-#line 162 "parser.y"
+#line 160 "parser.y"
     {//getting rid of yyempty in local declartions
         yyval = yyvsp[-1];
     }
-#line 1404 "parser.tab.c"
+#line 1402 "parser.tab.c"
     break;
 
   case 20: /* compound_declaration: CURLYOP_BRACKET statement_list CURLYCL_BRACKET  */
-#line 166 "parser.y"
+#line 164 "parser.y"
     {//no empty in statement list
         yyval = yyvsp[-1];
     }
-#line 1412 "parser.tab.c"
+#line 1410 "parser.tab.c"
     break;
 
   case 21: /* compound_declaration: CURLYOP_BRACKET CURLYCL_BRACKET  */
-#line 170 "parser.y"
+#line 168 "parser.y"
     {   /*No action on empty*/}
-#line 1418 "parser.tab.c"
+#line 1416 "parser.tab.c"
     break;
 
   case 22: /* local_declarations: local_declarations var_declaration  */
-#line 175 "parser.y"
+#line 173 "parser.y"
     {
         YYSTYPE temp = yyvsp[-1];
         if(temp == NULL){
@@ -1431,19 +1429,19 @@ yyreduce:
             yyval = yyvsp[-1];
         }
     }
-#line 1435 "parser.tab.c"
+#line 1433 "parser.tab.c"
     break;
 
   case 23: /* local_declarations: var_declaration  */
-#line 188 "parser.y"
+#line 186 "parser.y"
     {
         yyval = yyvsp[0];
     }
-#line 1443 "parser.tab.c"
+#line 1441 "parser.tab.c"
     break;
 
   case 24: /* statement_list: statement_list statement  */
-#line 195 "parser.y"
+#line 193 "parser.y"
     {
         YYSTYPE temp = yyvsp[-1];
         if(temp == NULL){
@@ -1456,333 +1454,333 @@ yyreduce:
             yyval = yyvsp[-1];
         }
     }
-#line 1460 "parser.tab.c"
+#line 1458 "parser.tab.c"
     break;
 
   case 25: /* statement_list: statement  */
-#line 208 "parser.y"
+#line 206 "parser.y"
     {
         yyval = yyvsp[0];
     }
-#line 1468 "parser.tab.c"
+#line 1466 "parser.tab.c"
     break;
 
   case 26: /* statement: expression_declaration  */
-#line 215 "parser.y"
+#line 213 "parser.y"
     { //all get itself
         yyval = yyvsp[0];
     }
-#line 1476 "parser.tab.c"
+#line 1474 "parser.tab.c"
     break;
 
   case 27: /* statement: compound_declaration  */
-#line 219 "parser.y"
+#line 217 "parser.y"
     {
         yyval = yyvsp[0];
     }
-#line 1484 "parser.tab.c"
+#line 1482 "parser.tab.c"
     break;
 
   case 28: /* statement: selection_declaration  */
-#line 223 "parser.y"
+#line 221 "parser.y"
     {
         yyval = yyvsp[0];
     }
-#line 1492 "parser.tab.c"
+#line 1490 "parser.tab.c"
     break;
 
   case 29: /* statement: iteration_declaration  */
-#line 227 "parser.y"
+#line 225 "parser.y"
     {
         yyval = yyvsp[0];
     }
-#line 1500 "parser.tab.c"
+#line 1498 "parser.tab.c"
     break;
 
   case 30: /* statement: return_declaration  */
-#line 231 "parser.y"
+#line 229 "parser.y"
     {
         yyval = yyvsp[0];
     }
-#line 1508 "parser.tab.c"
+#line 1506 "parser.tab.c"
     break;
 
   case 31: /* expression_declaration: expression SEMICOL_PUNCT  */
-#line 238 "parser.y"
+#line 236 "parser.y"
     {
         yyval = yyvsp[-1];
     }
-#line 1516 "parser.tab.c"
+#line 1514 "parser.tab.c"
     break;
 
   case 32: /* expression_declaration: SEMICOL_PUNCT  */
-#line 242 "parser.y"
+#line 240 "parser.y"
     {/*no semantic value to associate*/}
-#line 1522 "parser.tab.c"
+#line 1520 "parser.tab.c"
     break;
 
   case 33: /* selection_declaration: IF CIRCLEOP_BRACKET expression CIRCLECL_BRACKET statement  */
-#line 247 "parser.y"
+#line 245 "parser.y"
     {
         yyval = new_stmt_node(IF_SK);
         yyval->child[0] = yyvsp[-2]; // get the op expression
         yyval->child[1] = yyvsp[0]; // get the then part
     }
-#line 1532 "parser.tab.c"
+#line 1530 "parser.tab.c"
     break;
 
   case 34: /* selection_declaration: IF CIRCLEOP_BRACKET expression CIRCLECL_BRACKET statement ELSE statement  */
-#line 253 "parser.y"
+#line 251 "parser.y"
     {
         yyval = new_stmt_node(IF_SK);
         yyval->child[0] = yyvsp[-4]; // get the op expression
         yyval->child[1] = yyvsp[-2]; // get the then part
         yyval->child[2] = yyvsp[0]; // else part statement
     }
-#line 1543 "parser.tab.c"
+#line 1541 "parser.tab.c"
     break;
 
   case 35: /* iteration_declaration: WHILE CIRCLEOP_BRACKET expression CIRCLECL_BRACKET statement  */
-#line 263 "parser.y"
+#line 261 "parser.y"
     {
         yyval = new_stmt_node(WHILE_SK);
         yyval->child[0]= yyvsp[-2]; //op expression
         yyval->child[1]= yyvsp[0]; // do part statement
     }
-#line 1553 "parser.tab.c"
+#line 1551 "parser.tab.c"
     break;
 
   case 36: /* return_declaration: RETURN SEMICOL_PUNCT  */
-#line 272 "parser.y"
+#line 270 "parser.y"
     {
         yyval = new_stmt_node(RETURN_SK);
     }
-#line 1561 "parser.tab.c"
+#line 1559 "parser.tab.c"
     break;
 
   case 37: /* return_declaration: RETURN expression SEMICOL_PUNCT  */
-#line 276 "parser.y"
+#line 274 "parser.y"
     {
         yyval = new_stmt_node(RETURN_SK);
         yyval->child[0]= yyvsp[-1]; // expression returned
     }
-#line 1570 "parser.tab.c"
+#line 1568 "parser.tab.c"
     break;
 
   case 38: /* expression: var EQUAL expression  */
-#line 284 "parser.y"
+#line 282 "parser.y"
     {
         yyval = new_stmt_node(ASSIGN_SK);
         yyval->child[0] = yyvsp[-2]; // get var of this expression op
         yyval->child[1] = yyvsp[0]; // expression assigned
     }
-#line 1580 "parser.tab.c"
+#line 1578 "parser.tab.c"
     break;
 
   case 39: /* expression: simple_expression  */
-#line 290 "parser.y"
+#line 288 "parser.y"
     {
         yyval= yyvsp[0]; //get itself
     }
-#line 1588 "parser.tab.c"
+#line 1586 "parser.tab.c"
     break;
 
   case 40: /* var: identificator  */
-#line 297 "parser.y"
+#line 295 "parser.y"
     {
         yyval = yyvsp[0];
     }
-#line 1596 "parser.tab.c"
+#line 1594 "parser.tab.c"
     break;
 
   case 41: /* var: identificator SQUAREOP_BRACKET expression SQUARECL_BRACKET  */
-#line 301 "parser.y"
+#line 299 "parser.y"
     {
         yyval = yyvsp[-3];
         yyval->child[0] = yyvsp[-1]; //Child is the expression in [] use for indexing
         yyval->has.exp.kind = VECT_ID_EK; //Expression of vector identifier
     }
-#line 1606 "parser.tab.c"
+#line 1604 "parser.tab.c"
     break;
 
   case 42: /* simple_expression: sum_expression relational sum_expression  */
-#line 310 "parser.y"
+#line 308 "parser.y"
     {
         yyval = yyvsp[-1]; // get the relational op
         yyval->child[0] = yyvsp[-2]; //sum_express
         yyval->child[1] = yyvsp[0]; //sum_express
     }
-#line 1616 "parser.tab.c"
+#line 1614 "parser.tab.c"
     break;
 
   case 43: /* simple_expression: sum_expression  */
-#line 316 "parser.y"
+#line 314 "parser.y"
     {
         yyval=yyvsp[0];
     }
-#line 1624 "parser.tab.c"
+#line 1622 "parser.tab.c"
     break;
 
   case 44: /* relational: EQ_RELOP  */
-#line 323 "parser.y"
+#line 321 "parser.y"
     {
         yyval= new_exp_node(OP_EK);
         yyval->attr.op= EQ_RELOP;
     }
-#line 1633 "parser.tab.c"
+#line 1631 "parser.tab.c"
     break;
 
   case 45: /* relational: NOTEQ_RELOP  */
-#line 328 "parser.y"
+#line 326 "parser.y"
     {
         yyval= new_exp_node(OP_EK);
         yyval->attr.op= NOTEQ_RELOP;
     }
-#line 1642 "parser.tab.c"
+#line 1640 "parser.tab.c"
     break;
 
   case 46: /* relational: LESSEQ_RELOP  */
-#line 333 "parser.y"
+#line 331 "parser.y"
     {
         yyval= new_exp_node(OP_EK);
         yyval->attr.op= LESSEQ_RELOP;
     }
-#line 1651 "parser.tab.c"
+#line 1649 "parser.tab.c"
     break;
 
   case 47: /* relational: GREATEQ_RELOP  */
-#line 338 "parser.y"
+#line 336 "parser.y"
     {
         yyval= new_exp_node(OP_EK);
         yyval->attr.op= GREATEQ_RELOP;
     }
-#line 1660 "parser.tab.c"
+#line 1658 "parser.tab.c"
     break;
 
   case 48: /* relational: GREAT_RELOP  */
-#line 343 "parser.y"
+#line 341 "parser.y"
     {
         yyval= new_exp_node(OP_EK);
         yyval->attr.op= GREAT_RELOP;
     }
-#line 1669 "parser.tab.c"
+#line 1667 "parser.tab.c"
     break;
 
   case 49: /* relational: LESS_RELOP  */
-#line 348 "parser.y"
+#line 346 "parser.y"
     {
         yyval= new_exp_node(OP_EK);
         yyval->attr.op= LESS_RELOP;
     }
-#line 1678 "parser.tab.c"
+#line 1676 "parser.tab.c"
     break;
 
   case 50: /* sum_expression: sum_expression sum term  */
-#line 356 "parser.y"
+#line 354 "parser.y"
     {
         yyval = yyvsp[-1]; //sum node
         yyval->child[0] = yyvsp[-2]; //the expression is left associative
         yyval->child[1] = yyvsp[0]; //term tree is stored
     }
-#line 1688 "parser.tab.c"
+#line 1686 "parser.tab.c"
     break;
 
   case 51: /* sum_expression: term  */
-#line 362 "parser.y"
+#line 360 "parser.y"
     {
         yyval = yyvsp[0]; //get the three from itself
     }
-#line 1696 "parser.tab.c"
+#line 1694 "parser.tab.c"
     break;
 
   case 52: /* sum: PLUS_ALOP  */
-#line 369 "parser.y"
+#line 367 "parser.y"
     {
         yyval= new_exp_node(OP_EK);
         yyval->attr.op= PLUS_ALOP;
     }
-#line 1705 "parser.tab.c"
+#line 1703 "parser.tab.c"
     break;
 
   case 53: /* sum: MINUS_ALOP  */
-#line 374 "parser.y"
+#line 372 "parser.y"
     {
         yyval= new_exp_node(OP_EK);
         yyval->attr.op= MINUS_ALOP;
     }
-#line 1714 "parser.tab.c"
+#line 1712 "parser.tab.c"
     break;
 
   case 54: /* term: term mult factor  */
-#line 382 "parser.y"
+#line 380 "parser.y"
     {
         yyval = yyvsp[-1]; //get the left associative term
         yyval->child[0] = yyvsp[-2]; // get the operator
         yyval->child[1] = yyvsp[0]; // get the factor
     }
-#line 1724 "parser.tab.c"
+#line 1722 "parser.tab.c"
     break;
 
   case 55: /* term: factor  */
-#line 388 "parser.y"
+#line 386 "parser.y"
     {
         yyval=yyvsp[0]; //get itself
     }
-#line 1732 "parser.tab.c"
+#line 1730 "parser.tab.c"
     break;
 
-  case 56: /* mult: MULT_PRE_ALOP  */
-#line 395 "parser.y"
-    {
-        yyval= new_exp_node(OP_EK);
-        yyval->attr.op= MULT_PRE_ALOP;
-    }
-#line 1741 "parser.tab.c"
-    break;
-
-  case 57: /* mult: DIV_PRE_ALOP  */
-#line 400 "parser.y"
+  case 56: /* mult: DIV_PRE_ALOP  */
+#line 393 "parser.y"
     {
         yyval= new_exp_node(OP_EK);
         yyval->attr.op= DIV_PRE_ALOP;
     }
-#line 1750 "parser.tab.c"
+#line 1739 "parser.tab.c"
+    break;
+
+  case 57: /* mult: MULT_PRE_ALOP  */
+#line 398 "parser.y"
+    {
+        yyval= new_exp_node(OP_EK);
+        yyval->attr.op= MULT_PRE_ALOP;
+    }
+#line 1748 "parser.tab.c"
     break;
 
   case 58: /* factor: CIRCLEOP_BRACKET expression CIRCLECL_BRACKET  */
-#line 408 "parser.y"
+#line 406 "parser.y"
     {
         yyval = yyvsp[-1]; //get the expression value
     }
-#line 1758 "parser.tab.c"
+#line 1756 "parser.tab.c"
     break;
 
   case 59: /* factor: var  */
-#line 412 "parser.y"
+#line 410 "parser.y"
     {
         yyval = yyvsp[0]; //get the variable ident or vec
     }
-#line 1766 "parser.tab.c"
+#line 1764 "parser.tab.c"
     break;
 
   case 60: /* factor: activation  */
-#line 416 "parser.y"
+#line 414 "parser.y"
     {
         yyval = yyvsp[0];
     }
-#line 1774 "parser.tab.c"
+#line 1772 "parser.tab.c"
     break;
 
   case 61: /* factor: number  */
-#line 420 "parser.y"
+#line 418 "parser.y"
     {
         yyval = yyvsp[0];
     }
-#line 1782 "parser.tab.c"
+#line 1780 "parser.tab.c"
     break;
 
   case 62: /* activation: identificator CIRCLEOP_BRACKET argument_list CIRCLECL_BRACKET  */
-#line 427 "parser.y"
+#line 425 "parser.y"
     {
         //call a function
         yyval = yyvsp[-3];//addt
@@ -1790,21 +1788,21 @@ yyreduce:
         yyval->has.stmt = CALL_SK; 
         yyval->type = STMT_T;
     }
-#line 1794 "parser.tab.c"
+#line 1792 "parser.tab.c"
     break;
 
   case 63: /* activation: identificator CIRCLEOP_BRACKET CIRCLECL_BRACKET  */
-#line 435 "parser.y"
+#line 433 "parser.y"
     {//no empty in arguments
         yyval = yyvsp[-2];
         yyval->has.stmt = CALL_SK;
         yyval->type = STMT_T;
     }
-#line 1804 "parser.tab.c"
+#line 1802 "parser.tab.c"
     break;
 
   case 64: /* argument_list: argument_list COMMA_PUNCT expression  */
-#line 444 "parser.y"
+#line 442 "parser.y"
     {
         YYSTYPE temp = yyvsp[-2];
         if(temp == NULL){
@@ -1817,37 +1815,38 @@ yyreduce:
             yyval = yyvsp[-2];
         }
     }
-#line 1821 "parser.tab.c"
+#line 1819 "parser.tab.c"
     break;
 
   case 65: /* argument_list: expression  */
-#line 457 "parser.y"
+#line 455 "parser.y"
     {
         yyval = yyvsp[0];
     }
-#line 1829 "parser.tab.c"
+#line 1827 "parser.tab.c"
     break;
 
   case 66: /* number: NUM  */
-#line 464 "parser.y"
+#line 462 "parser.y"
     {
-        yyval = new_exp_node(CONST_T);
+        yyval = new_exp_node(NUM_EK);
+        yyval->has.exp.type = CONST_T;
         yyval->attr.val = atoi((glob_context.p_token_rec)->lexeme);
     }
-#line 1838 "parser.tab.c"
+#line 1837 "parser.tab.c"
     break;
 
   case 67: /* identificator: ID  */
-#line 471 "parser.y"
+#line 470 "parser.y"
     {
         yyval = new_exp_node(ID_EK);
         yyval->attr.content = cp_str((glob_context.p_token_rec)->lexeme);
     }
-#line 1847 "parser.tab.c"
+#line 1846 "parser.tab.c"
     break;
 
 
-#line 1851 "parser.tab.c"
+#line 1850 "parser.tab.c"
 
       default: break;
     }
@@ -2040,7 +2039,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 475 "parser.y"
+#line 474 "parser.y"
 
 
 

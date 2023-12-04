@@ -78,14 +78,12 @@ type_specifier:
         //found leaf structure -semantic value of node
         $$=new_exp_node(TYPE_EK); //create new exp node
         $$->has.exp.type=INT_T;
-        $$->attr.content = "INTERGER";
     }
     | VOID
     {
         //found leaf structure -semantic value of node
         $$=new_exp_node(TYPE_EK); //create new void exp node
         $$->has.exp.type=VOID_T;
-        $$->attr.content = "VOID";
     }
     ;
 
@@ -391,15 +389,15 @@ term:
     ;
 
 mult:
-    MULT_PRE_ALOP
-    {
-        $$= new_exp_node(OP_EK);
-        $$->attr.op= MULT_PRE_ALOP;
-    }
-    | DIV_PRE_ALOP
+     DIV_PRE_ALOP
     {
         $$= new_exp_node(OP_EK);
         $$->attr.op= DIV_PRE_ALOP;
+    }
+    |MULT_PRE_ALOP
+    {
+        $$= new_exp_node(OP_EK);
+        $$->attr.op= MULT_PRE_ALOP;
     }
     ;
 
@@ -462,7 +460,8 @@ argument_list:
 number:
     NUM
     {
-        $$ = new_exp_node(CONST_T);
+        $$ = new_exp_node(NUM_EK);
+        $$->has.exp.type = CONST_T;
         $$->attr.val = atoi((glob_context.p_token_rec)->lexeme);
     }
 
