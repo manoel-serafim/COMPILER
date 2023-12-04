@@ -30,7 +30,7 @@ typedef struct node
     struct node * sibling;
     int position[2]; //char & line position
     node_type type;
-    union {stmt_type stmt; struct exp; } has; // node has a stmt or an exp
+    union {stmt_type stmt; struct exp exp; } has; // node has a stmt or an exp
     union { int op; int val; char* content;} attr;
     
 } sintax_t_node;
