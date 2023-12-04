@@ -8,7 +8,7 @@ SAMPLE_DIR= utils/samples
 all: bin/cmc
 
 bin/cmc: main.c $(BUILD_DIR)/lexer.o $(BUILD_DIR)/buffer.o $(BUILD_DIR)/parser.tab.o $(BUILD_DIR)/parser.o
-	$(CC) -o $@ $^
+	$(CC) -g -o $@ $^
 
 $(BUILD_DIR)/buffer.o: $(SRC_DIR)/buffer.c
 	$(CC) -c $< -o $@ $(CFLAGS)

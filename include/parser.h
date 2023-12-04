@@ -8,7 +8,7 @@
 typedef enum {STMT_T, EXP_T} node_type;
 typedef enum {IF_SK, WHILE_SK, RETURN_SK, ASSIGN_SK/*=2*/, VAR_SK, VECT_SK, FUNCT_SK, CALL_SK} stmt_kind;
 typedef enum {OP_EK, ID_EK, TYPE_EK/*ie. int decl*/, VAR_ID_EK/*type variable;*/, VECT_ID_EK/*type vector[size]*/, FUNCT_EK/*type funct(params)decl*/} exp_kind;
-typedef enum {NONE_T, INT_T, VOID_T, CONST_T} exp_type;
+typedef enum {INT_T, VOID_T, CONST_T} exp_type;
 struct exp {exp_kind kind; exp_type type;};
 
 #define MAXCHILDREN 3 // max of three expressions under each stmt

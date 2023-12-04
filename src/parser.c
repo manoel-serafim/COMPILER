@@ -27,7 +27,7 @@ syntax_t_node * new_exp_node(exp_kind exp_k){
         }
         p_node->sibling = NULL;
         p_node->has.exp.kind = exp_k;
-        p_node->has.exp.type = NONE_T;
+        p_node->has.exp.type = VOID_T;
         p_node->position[0] = (glob_context.p_buffer)->line_number;
         p_node->position[1] = (glob_context.p_buffer)->line_char_pos;
         p_node->type = EXP_T;
@@ -43,9 +43,28 @@ char* cp_str(char s[]){
     return (char*)s_new;
 }
 
-static int indent_no = 0;
-#define ADD_INDENT indent_no+=2
-#define SUB_INDENT indent_no-=2
+
+
+
+/*--[print syntax tree]--*/
+
+const char* exp_type_to_str(exp_type type){
+    switch(type){
+        case INT_T:
+            return "INTERGER";
+        case VOID_T:
+            return "VOID";
+        case CONST_T:
+            return "CONSTANT";
+        default:
+            return "UNKNOWN";
+    }
+}
+static int indent_no = -4;
+#define ADD_INDENT indent_no+=4
+#define SUB_INDENT indent_no-=4
+
+
 
 static void indent(void){
     for (int i=0; i< indent_no; i++){
@@ -56,6 +75,7 @@ void print_syntax_tree (syntax_t_node* root){
     ADD_INDENT;
     while (root != NULL){
         indent();
+        
         if(root->type == STMT_T){
             switch (root->has.stmt){
                 case IF_SK:
@@ -71,16 +91,16 @@ void print_syntax_tree (syntax_t_node* root){
                     puts("ASSIGN");
                     break;
                 case VAR_SK:
-                    puts("VAR");
+                    printf("VARIABLE DECLARATION: \"%s\" \n", root->attr.content);
                     break;
                 case VECT_SK:
-                    puts("VECTOR");
+                    puts("VECTOR DECLARATION");
                     break;
                 case FUNCT_SK:
-                    puts("FUNCTION");
+                    printf("FUNCTION: \"%s\" \n", root->attr.content);
                     break;
                 case CALL_SK:
-                    puts("FUNCTION CALL");
+                    printf("CALL: \"%s\" \n", root->attr.content);
                     break;
                 default:
                     puts("UNKNOWN STATEMENT");
@@ -89,13 +109,13 @@ void print_syntax_tree (syntax_t_node* root){
         }else if( root->type == EXP_T){
             switch (root->has.exp.kind){
                 case OP_EK:
-                    puts("OPERATOR");
+                    printf("OPERATOR: %s\n", yytokentype_to_string(root->attr.op));
                     break;
                 case ID_EK:
-                    puts("IDENTIFIER");
+                    printf("IDENTIFIER: \"%s\"\n", root->attr.content);
                     break;
                 case TYPE_EK:
-                    puts("DECLARATION");
+                    printf("TYPE %s\n", exp_type_to_str(root->has.exp.type));
                     break;
                 case VAR_ID_EK:
                     puts("VARIABLE EXPRESSION");

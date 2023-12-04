@@ -30,6 +30,5 @@ extern ParsingContext glob_context;
 
 /*--[ get_next_token - reuses previous buffer for optimization - returns into the token ]--*/
 yytoken_kind_t get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token );
-
-
+const char* yytokentype_to_string(enum yytokentype token);
 #endif

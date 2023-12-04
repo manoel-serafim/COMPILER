@@ -474,46 +474,6 @@ identificator:
     }
 %%
 
-const char* yytokentype_to_string(enum yytokentype token) {
-    switch (token) {
-        case YYEMPTY: return "YYEMPTY";
-        case YYEOF: return "YYEOF";
-        case YYerror: return "YYerror";
-        case YYUNDEF: return "YYUNDEF";
-        case ID: return "ID";
-        case NUM: return "NUM";
-        case IF: return "IF";
-        case ELSE: return "ELSE";
-        case WHILE: return "WHILE";
-        case RETURN: return "RETURN";
-        case INT: return "INT";
-        case VOID: return "VOID";
-        case PLUS_ALOP: return "PLUS_ALOP";
-        case MINUS_ALOP: return "MINUS_ALOP";
-        case MULT_PRE_ALOP: return "MULT_PRE_ALOP";
-        case DIV_PRE_ALOP: return "DIV_PRE_ALOP";
-        case EQ_RELOP: return "EQ_RELOP";
-        case NOTEQ_RELOP: return "NOTEQ_RELOP";
-        case LESSEQ_RELOP: return "LESSEQ_RELOP";
-        case GREATEQ_RELOP: return "GREATEQ_RELOP";
-        case GREAT_RELOP: return "GREAT_RELOP";
-        case LESS_RELOP: return "LESS_RELOP";
-        case EQUAL: return "EQUAL";
-        case CURLYOP_BRACKET: return "CURLYOP_BRACKET";
-        case CURLYCL_BRACKET: return "CURLYCL_BRACKET";
-        case CIRCLEOP_BRACKET: return "CIRCLEOP_BRACKET";
-        case CIRCLECL_BRACKET: return "CIRCLECL_BRACKET";
-        case SQUAREOP_BRACKET: return "SQUAREOP_BRACKET";
-        case SQUARECL_BRACKET: return "SQUARECL_BRACKET";
-        case SEMICOL_PUNCT: return "SEMICOL_PUNCT";
-        case COMMA_PUNCT: return "COMMA_PUNCT";
-        case WHITESPACE: return "WHITESPACE";
-        case COMMENT: return "COMMENT";
-        case STRING: return "STRING";
-        default: return "Unknown token";
-    }
-}
-
 
 void yyerror(char* err) {
     puts(RED"__________________________________________[ SYNTATIC ERROR ]________________________________________");
