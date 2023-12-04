@@ -117,9 +117,6 @@ void print_syntax_tree (syntax_t_node* root){
                 case TYPE_EK:
                     printf("TYPE %s\n", exp_type_to_str(root->has.exp.type));
                     break;
-                case VAR_ID_EK:
-                    puts("VARIABLE EXPRESSION");
-                    break;
                 case VECT_ID_EK:
                     puts("VECTOR EXPRESSION");
                     break;
