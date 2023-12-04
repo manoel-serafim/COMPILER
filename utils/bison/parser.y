@@ -54,19 +54,19 @@ declaration:
     ;
 
 var_declaration:
-    type_specifier ID SEMICOL_PUNCT
+    type_specifier identificator SEMICOL_PUNCT
     {
         $$ = $1; //type spec go down semantic value
-        $$->child[0]= $2; // Set ID como filho de VAR_DECL 
-        $2->has.stmt = VAR_DECL_T; //simple variable statement
+        $$->child[0]= $2; // Set exp type node como filho de VAR_DECL 
+        $2->has.stmt = VAR_SK; //simple variable statement
         $2->type= STMT_T; //declaration statement
         
     }
-    | type_specifier ID SQUAREOP_BRACKET NUM SQUARECL_BRACKET SEMICOL_PUNCT
+    | type_specifier identificator SQUAREOP_BRACKET NUM SQUARECL_BRACKET SEMICOL_PUNCT
     {
         $$ = $1; //type spec go down semantic value
-        $$->child[0]= $2; // Set ID como filho de VAR_DECL 
-        $2->has.stmt = VECT_DECL_T; //vector declaration statement
+        $$->child[0]= $2; // Set identificator como filho de VAR_DECL 
+        $2->has.stmt = VECT_SK; //vector declaration statement
         $2->attr.size = $4->attr.val; // vector[size]
         $2->type = STMT_T; //declaration statement   
     }
@@ -76,146 +76,402 @@ type_specifier:
     INT
     {
         //found leaf structure -semantic value of node
-        $$=new_exp_node(TYPE_I, INT_T); //create new exp node
+        $$=new_exp_node(TYPE_EK); //create new exp node
+        $$->has.exp.type=INT_T;
+        $$->attr.content = "INTERGER";
     }
     | VOID
     {
         //found leaf structure -semantic value of node
-        $$=new_exp_node(TYPE_I, VOID_T); //create new void exp node
+        $$=new_exp_node(TYPE_EK); //create new void exp node
+        $$->has.exp.type=VOID_T;
+        $$->attr.content = "VOID";
     }
     ;
 
 fun_declaration:
-    type_specifier ID CIRCLEOP_BRACKET parameters CIRCLECL_BRACKET compound_declaration
+    type_specifier identificator CIRCLEOP_BRACKET parameters CIRCLECL_BRACKET compound_declaration
     {
         $$ = $1; //set semantic value to type spec, it will have a node for the specific type
-        $$->child[0] = $2; //child + left = ID (name of func)
+        $$->child[0] = $2; //child + left = identificator (name of func)
         $2->child[0] = $4; //pointer to funct args
         $2->child[1] = $6; // at the side of params it will have the declaration of the procedure
-        S2->has.stmt = FUNCT_T; // this statement is a function
+        $2->has.stmt = FUNCT_SK; // this statement is a function
         $2->type = STMT_T; //function declaration statement
     }
     ;
 
 parameters:
     parameter_list
+    {
+      $$ = $1; //set semantic value to get the parameter declarations
+    }
     | VOID
+    { /*do nothing*/ }
     ;
 
 parameter_list:
     parameter_list COMMA_PUNCT parameter
+    {
+        YYSTYPE temp = $1; // temp tree node of param list
+        if(temp == NULL){
+            $$ = $3; // if not def, get parameter definition
+        }else{
+            while(temp->sibling != NULL){ //get next empty sibling
+                temp = temp->sibling;
+            }
+            temp->sibling = $3;
+            $$ = $1; //get node from parameter_list
+        }
+    }
     | parameter
+    {
+        $$ = $1; //get node from parameter
+    }
     ;
 
 parameter:
-    type_specifier ID
-    | type_specifier ID SQUAREOP_BRACKET SQUARECL_BRACKET
+    type_specifier identificator
+    {
+        $$ = $1; // get node from spec
+        $$->child[0] = $2; // the identificator is the left child of the type spec
+    }
+    | type_specifier identificator SQUAREOP_BRACKET SQUARECL_BRACKET
+    {
+        $$ = $1; //get node from spec
+        $$->child[0] = $2; //identificator is in left child
+        $2->has.exp.kind = VECT_ID_EK;
+    }
     ;
 
 compound_declaration:
     CURLYOP_BRACKET local_declarations statement_list CURLYCL_BRACKET
+    {
+        YYSTYPE temp = $2;
+        if(temp == NULL){
+            $$=$3;
+        }else{
+            while(temp->sibling != NULL){ //get next empty sibling
+                temp = temp->sibling;
+            }
+            temp->sibling = $3;
+            $$ = $2; //get node from parameter_list
+        }
+    }
+    | CURLYOP_BRACKET local_declarations CURLYCL_BRACKET
+    {//getting rid of yyempty in local declartions
+        $$ = $2;
+    }
+    | CURLYOP_BRACKET statement_list CURLYCL_BRACKET
+    {//no empty in statement list
+        $$ = $2;
+    }
+    | CURLYOP_BRACKET CURLYCL_BRACKET
+    {   /*No action on empty*/}
     ;
 
 local_declarations:
     local_declarations var_declaration
-    |
+    {
+        YYSTYPE temp = $1;
+        if(temp == NULL){
+            $$ = $2;
+        }else{
+            while(temp->sibling != NULL){
+                temp = temp->sibling;
+            }   
+            temp->sibling = $2;
+            $$ = $1;
+        }
+    }
+    | var_declaration
+    {
+        $$ = $1;
+    }
     ;
 
 statement_list:
     statement_list statement
-    |
+    {
+        YYSTYPE temp = $1;
+        if(temp == NULL){
+            $$ = $2;
+        }else{
+            while(temp->sibling != NULL){
+                temp = temp->sibling;
+            }   
+            temp->sibling = $2;
+            $$ = $1;
+        }
+    }
+    | statement
+    {
+        $$ = $1;
+    }
     ;
 
 statement:
     expression_declaration
+    { //all get itself
+        $$ = $1;
+    }
     | compound_declaration
+    {
+        $$ = $1;
+    }
     | selection_declaration
+    {
+        $$ = $1;
+    }
     | iteration_declaration
+    {
+        $$ = $1;
+    }
     | return_declaration
+    {
+        $$ = $1;
+    }
     ;
 
 expression_declaration:
-    expression SEMICOL_PUNCT | SEMICOL_PUNCT
+    expression SEMICOL_PUNCT 
+    {
+        $$ = $1;
+    }
+    | SEMICOL_PUNCT
+    {/*no semantic value to associate*/}
     ;
 
 selection_declaration:
     IF CIRCLEOP_BRACKET expression CIRCLECL_BRACKET statement
+    {
+        $$ = new_stmt_node(IF_SK);
+        $$->child[0] = $3; // get the op expression
+        $$->child[1] = $5; // get the then part
+    }
     | IF CIRCLEOP_BRACKET expression CIRCLECL_BRACKET statement ELSE statement
+    {
+        $$ = new_stmt_node(IF_SK);
+        $$->child[0] = $3; // get the op expression
+        $$->child[1] = $5; // get the then part
+        $$->child[2] = $7; // else part statement
+    }
     ;
 
 iteration_declaration:
     WHILE CIRCLEOP_BRACKET expression CIRCLECL_BRACKET statement
+    {
+        $$ = new_stmt_node(WHILE_SK);
+        $$->child[0]= $3; //op expression
+        $$->child[1]= $5; // do part statement
+    }
     ;
 
 return_declaration:
     RETURN SEMICOL_PUNCT
+    {
+        $$ = new_stmt_node(RETURN_SK);
+    }
     | RETURN expression SEMICOL_PUNCT
+    {
+        $$ = new_stmt_node(RETURN_SK);
+        $$->child[0]= $2; // expression returned
+    }
     ;
 
 expression:
     var EQUAL expression
+    {
+        $$ = new_stmt_node(ASSIGN_SK);
+        $$->child[0] = $1; // get var of this expression op
+        $$->child[1] = $3; // expression assigned
+    }
     | simple_expression
+    {
+        $$= $1; //get itself
+    }
     ;
 
 var:
-    ID
-    | ID SQUAREOP_BRACKET expression SQUARECL_BRACKET
+    identificator
+    {
+        $$ = $1;
+    }
+    | identificator SQUAREOP_BRACKET expression SQUARECL_BRACKET
+    {
+        $$ = $1;
+        $$->child[0] = $3; //Child is the expression in [] use for indexing
+        $$->has.exp.kind = VECT_ID_EK; //Expression of vector identifier
+    }
     ;
 
 simple_expression:
     sum_expression relational sum_expression
+    {
+        $$ = $2; // get the relational op
+        $$->child[0] = $1; //sum_express
+        $$->child[1] = $3; //sum_express
+    }
     | sum_expression
+    {
+        $$=$1;
+    }
     ;
 
 relational:
     EQ_RELOP
+    {
+        $$= new_exp_node(OP_EK);
+        $$->attr.op= EQ_RELOP;
+    }
     | NOTEQ_RELOP
+    {
+        $$= new_exp_node(OP_EK);
+        $$->attr.op= NOTEQ_RELOP;
+    }
     | LESSEQ_RELOP
+    {
+        $$= new_exp_node(OP_EK);
+        $$->attr.op= LESSEQ_RELOP;
+    }
     | GREATEQ_RELOP
+    {
+        $$= new_exp_node(OP_EK);
+        $$->attr.op= GREATEQ_RELOP;
+    }
     | GREAT_RELOP
+    {
+        $$= new_exp_node(OP_EK);
+        $$->attr.op= GREAT_RELOP;
+    }
     | LESS_RELOP
+    {
+        $$= new_exp_node(OP_EK);
+        $$->attr.op= LESS_RELOP;
+    }
     ;
 
 sum_expression:
     sum_expression sum term
+    {
+        $$ = $2; //sum node
+        $$->child[0] = $1; //the expression is left associative
+        $$->child[1] = $3; //term tree is stored
+    }
     | term
+    {
+        $$ = $1; //get the three from itself
+    }
     ;
 
 sum:
     PLUS_ALOP
+    {
+        $$= new_exp_node(OP_EK);
+        $$->attr.op= PLUS_ALOP;
+    }
     | MINUS_ALOP
+    {
+        $$= new_exp_node(OP_EK);
+        $$->attr.op= MINUS_ALOP;
+    }
     ;
 
 term:
     term mult factor
+    {
+        $$ = $2; //get the left associative term
+        $$->child[0] = $1; // get the operator
+        $$->child[1] = $3; // get the factor
+    }
     | factor
+    {
+        $$=$1; //get itself
+    }
     ;
 
 mult:
     MULT_PRE_ALOP
+    {
+        $$= new_exp_node(OP_EK);
+        $$->attr.op= MULT_PRE_ALOP;
+    }
     | DIV_PRE_ALOP
+    {
+        $$= new_exp_node(OP_EK);
+        $$->attr.op= DIV_PRE_ALOP;
+    }
     ;
 
 factor:
     CIRCLEOP_BRACKET expression CIRCLECL_BRACKET
+    {
+        $$ = $2; //get the expression value
+    }
     | var
+    {
+        $$ = $1; //get the variable ident or vec
+    }
     | activation
-    | NUM
+    {
+        $$ = $1;
+    }
+    | number
+    {
+        $$ = $1;
+    }
     ;
 
 activation:
-    ID CIRCLEOP_BRACKET arguments CIRCLECL_BRACKET
-    ;
-
-arguments:
-    argument_list
-    |
+    identificator CIRCLEOP_BRACKET argument_list CIRCLECL_BRACKET
+    {
+        //call a function
+        $$ = $1;//addt
+        $$->child[0] = $3; //args
+        $$->has.stmt = CALL_SK; 
+        $$->type = STMT_T;
+    }
+    | identificator CIRCLEOP_BRACKET CIRCLECL_BRACKET
+    {//no empty in arguments
+        $$ = $1;
+        $$->has.stmt = CALL_SK;
+        $$->type = STMT_T;
+    }
     ;
 
 argument_list:
     argument_list COMMA_PUNCT expression
+    {
+        YYSTYPE temp = $1;
+        if(temp == NULL){
+            $$ = $3;
+        }else{
+            while(temp->sibling != NULL){
+                temp = temp->sibling;
+            }   
+            temp->sibling = $3;
+            $$ = $1;
+        }
+    }
     | expression
+    {
+        $$ = $1;
+    }
     ;
+
+number:
+    NUM
+    {
+        $$ = new_exp_node(CONST_EK);
+        $$->attr.val = atoi((glob_context.p_token_rec)->lexeme);
+    }
+
+identificator:
+    ID
+    {
+        $$ = new_exp_node(ID_EK);
+        $$->attr.content = cp_str((glob_context.p_token_rec)->lexeme);
+    }
 %%
 
 const char* yytokentypeToString(enum yytokentype token) {

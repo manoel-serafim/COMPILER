@@ -6,10 +6,10 @@
 /*--[Sintax Tree Definitions]--*/
 
 typedef enum {STMT_T, EXP_T} node_type;
-typedef enum {IF_T, WHILE_T, RETURN_T, ASSIGN_T/*=2*/, VAR_DECL_T/*type variable;*/, VECT_DECL_T/*type vector[size]*/, FUNCT_T/*type funct(params)decl*/} stmt_type;
-typedef enum {OP_I, ID_I, TYPE_I/*ie. int decl*/} exp_identifier;
-typedef enum {INT_T, VOID_T} exp_type;
-struct exp {exp_identifier id; exp_type type;};
+typedef enum {IF_SK, WHILE_SK, RETURN_SK, ASSIGN_SK/*=2*/, VAR_SK, VECT_SK, FUNCT_SK, CALL_SK} stmt_kind;
+typedef enum {OP_EK, ID_EK, TYPE_EK/*ie. int decl*/, VAR_ID_EK/*type variable;*/, VECT_ID_EK/*type vector[size]*/, FUNCT_EK/*type funct(params)decl*/} exp_kind;
+typedef enum {NONE_T, INT_T, VOID_T, CONST_EK} exp_type;
+struct exp {exp_kind kind; exp_type type;};
 
 #define MAXCHILDREN 3 // max of three expressions under each stmt
 
@@ -20,12 +20,15 @@ typedef struct node
     struct node * sibling;
     int position[2]; //char & line position
     node_type type;
-    union {stmt_type stmt; struct exp exp; } has; // node has a stmt or an exp
+    union {stmt_kind stmt; struct exp exp; } has; // node has a stmt or an exp
     union { int op;/*tok type*/ int val;/*value assign*/ int size;/*vector size*/ char* content;/*content of*/} attr; // used in semantic analysis
     
 } syntax_t_node;
 
-syntax_t_node* new_stmt_node(stmt_type);
-syntax_t_node* new_exp_node(exp_identifier, exp_type);
+syntax_t_node* new_stmt_node(stmt_kind);
+syntax_t_node* new_exp_node(exp_kind);
+char* cp_str(char*);
+
+extern syntax_t_node* parse(void);
 
 #endif
