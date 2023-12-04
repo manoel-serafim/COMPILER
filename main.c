@@ -1,4 +1,5 @@
 #include "include/lexer.h"
+#include "include/parser.h"
 
 ParsingContext glob_context;
 
@@ -22,7 +23,8 @@ int main(int argc, char *argv[]) {
     glob_context.p_token_rec = malloc(sizeof(TokenRecord)); 
     
    
-    yyparse();
+    syntax_t_node* syntax_root = parse();
+    printf("p ->>> %d", syntax_root);
         
     /*printar arvore*/
     

@@ -6,8 +6,8 @@
 /*--[Sintax Tree Definitions]--*/
 
 typedef enum {STMT_T, EXP_T} node_type;
-typedef enum {IF_T, WHILE_T, RETURN_T, ASSIGN_T} stmt_type;
-typedef enum {OP_I, ID_I} exp_identifier;
+typedef enum {IF_T, WHILE_T, RETURN_T, ASSIGN_T/*=2*/, VAR_DECL_T/*type variable;*/, VECT_DECL_T/*type vector[size]*/, FUNCT_T/*type funct(params)decl*/} stmt_type;
+typedef enum {OP_I, ID_I, TYPE_I/*ie. int decl*/} exp_identifier;
 typedef enum {INT_T, VOID_T} exp_type;
 struct exp {exp_identifier id; exp_type type;};
 
@@ -21,11 +21,11 @@ typedef struct node
     int position[2]; //char & line position
     node_type type;
     union {stmt_type stmt; struct exp exp; } has; // node has a stmt or an exp
-    union { int op; int val; char* content;} attr;
+    union { int op;/*tok type*/ int val;/*value assign*/ int size;/*vector size*/ char* content;/*content of*/} attr; // used in semantic analysis
     
 } syntax_t_node;
 
 syntax_t_node* new_stmt_node(stmt_type);
-syntax_t_node* new_exp_node(exp_identifier);
+syntax_t_node* new_exp_node(exp_identifier, exp_type);
 
 #endif

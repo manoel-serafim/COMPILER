@@ -69,24 +69,22 @@
 /* First part of user prologue.  */
 #line 1 "parser.y"
 
-
-#define YYPARSER
 #include "parser.h"
 #include "macros.h"
 #define YYSTYPE syntax_t_node * //return of bison when ref to $
 #define YYSTYPE_IS_TRIVIAL 1
-#define YYSTYPE_IS_DECLARED 1
+#define YYSTYPE_IS_DECLARED 1 // is defined before any use of it
 #include "lexer.h"
 #include <stdio.h>
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
 void yyerror(char * err);
 
 static syntax_t_node* syntax_tree_root; //root of the tree
+syntax_t_node* parse(void);
 
 
 
-
-#line 90 "parser.tab.c"
+#line 88 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -565,13 +563,13 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    24,    24,    28,    29,    33,    34,    38,    39,    43,
-      44,    48,    52,    53,    57,    58,    62,    63,    67,    71,
-      72,    76,    77,    81,    82,    83,    84,    85,    89,    89,
-      93,    94,    98,   102,   103,   107,   108,   112,   113,   117,
-     118,   122,   123,   124,   125,   126,   127,   131,   132,   136,
-     137,   141,   142,   146,   147,   151,   152,   153,   154,   158,
-     162,   163,   167,   168
+       0,    22,    22,    26,    27,    31,    32,    36,    37,    41,
+      42,    46,    50,    51,    55,    56,    60,    61,    65,    69,
+      70,    74,    75,    79,    80,    81,    82,    83,    87,    87,
+      91,    92,    96,   100,   101,   105,   106,   110,   111,   115,
+     116,   120,   121,   122,   123,   124,   125,   129,   130,   134,
+     135,   139,   140,   144,   145,   149,   150,   151,   152,   156,
+     160,   161,   165,   166
 };
 #endif
 
@@ -1205,13 +1203,13 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* program: declaration_list  */
-#line 24 "parser.y"
+#line 22 "parser.y"
                      { syntax_tree_root = yyvsp[0]; }
-#line 1211 "parser.tab.c"
+#line 1209 "parser.tab.c"
     break;
 
 
-#line 1215 "parser.tab.c"
+#line 1213 "parser.tab.c"
 
       default: break;
     }
@@ -1404,7 +1402,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 170 "parser.y"
+#line 168 "parser.y"
 
 
 const char* yytokentypeToString(enum yytokentype token) {
@@ -1456,4 +1454,10 @@ void yyerror(char* err) {
     printf(CYN"\t[!] THE ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR [!]\n"RESET, (glob_context.p_buffer)->line_number, (glob_context.p_buffer)->line_char_pos);
     printf(YELLOW"\t[!] TOKEN LEXEME: "RED"%s "YELLOW"TOKEN TYPE: "RED"%s "YELLOW"[!]\n", (glob_context.p_token_rec)->lexeme, yytokentypeToString((glob_context.p_token_rec)->type));
     puts(RED"____________________________________________________________________________________________________"RESET);
+}
+
+syntax_t_node* parse(void){
+    yyparse();
+    printf("iscalled");
+    return syntax_tree_root;
 }

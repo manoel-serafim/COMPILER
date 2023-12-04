@@ -1,18 +1,16 @@
 %{
-
-#define YYPARSER
 #include "parser.h"
 #include "macros.h"
 #define YYSTYPE syntax_t_node * //return of bison when ref to $
 #define YYSTYPE_IS_TRIVIAL 1
-#define YYSTYPE_IS_DECLARED 1
+#define YYSTYPE_IS_DECLARED 1 // is defined before any use of it
 #include "lexer.h"
 #include <stdio.h>
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
 void yyerror(char * err);
 
 static syntax_t_node* syntax_tree_root; //root of the tree
-
+syntax_t_node* parse(void);
 
 
 %}
@@ -26,26 +24,77 @@ program:
 
 declaration_list:
     declaration_list declaration 
+    {   
+        YYSTYPE temp = $1; 
+        if(temp == NULL){ //if it was not def, def it
+            $$ = $2;
+        }else{
+            while(temp->sibling != NULL){ //if was def, find the next brother to define sequentially
+                temp = temp->sibling;
+            }
+            temp->sibling = $2; //found the sibling not def in the chained link and now will set value
+            $$ = $1; 
+        }
+    }
     | declaration
+    {
+        $$ = $1;
+    }
     ;
 
 declaration:
     var_declaration
+    {
+        $$ = $1; //set variable declaration as top
+    }
     | fun_declaration
+    {
+        $$ = $1; //set function declaration as top
+    }
     ;
 
 var_declaration:
     type_specifier ID SEMICOL_PUNCT
+    {
+        $$ = $1; //type spec go down semantic value
+        $$->child[0]= $2; // Set ID como filho de VAR_DECL 
+        $2->has.stmt = VAR_DECL_T; //simple variable statement
+        $2->type= STMT_T; //declaration statement
+        
+    }
     | type_specifier ID SQUAREOP_BRACKET NUM SQUARECL_BRACKET SEMICOL_PUNCT
+    {
+        $$ = $1; //type spec go down semantic value
+        $$->child[0]= $2; // Set ID como filho de VAR_DECL 
+        $2->has.stmt = VECT_DECL_T; //vector declaration statement
+        $2->attr.size = $4->attr.val; // vector[size]
+        $2->type = STMT_T; //declaration statement   
+    }
     ;
 
 type_specifier:
     INT
+    {
+        //found leaf structure -semantic value of node
+        $$=new_exp_node(TYPE_I, INT_T); //create new exp node
+    }
     | VOID
+    {
+        //found leaf structure -semantic value of node
+        $$=new_exp_node(TYPE_I, VOID_T); //create new void exp node
+    }
     ;
 
 fun_declaration:
     type_specifier ID CIRCLEOP_BRACKET parameters CIRCLECL_BRACKET compound_declaration
+    {
+        $$ = $1; //set semantic value to type spec, it will have a node for the specific type
+        $$->child[0] = $2; //child + left = ID (name of func)
+        $2->child[0] = $4; //pointer to funct args
+        $2->child[1] = $6; // at the side of params it will have the declaration of the procedure
+        S2->has.stmt = FUNCT_T; // this statement is a function
+        $2->type = STMT_T; //function declaration statement
+    }
     ;
 
 parameters:
@@ -218,4 +267,9 @@ void yyerror(char* err) {
     printf(CYN"\t[!] THE ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR [!]\n"RESET, (glob_context.p_buffer)->line_number, (glob_context.p_buffer)->line_char_pos);
     printf(YELLOW"\t[!] TOKEN LEXEME: "RED"%s "YELLOW"TOKEN TYPE: "RED"%s "YELLOW"[!]\n", (glob_context.p_token_rec)->lexeme, yytokentypeToString((glob_context.p_token_rec)->type));
     puts(RED"____________________________________________________________________________________________________"RESET);
+}
+
+syntax_t_node* parse(void){
+    yyparse();
+    return syntax_tree_root;
 }
