@@ -1,5 +1,4 @@
-#include "include/lexer.h"
-#include "utils/bison/parser.tab.h"
+#include "include/parser.h"
 
 ParsingContext glob_context;
 
@@ -20,11 +19,8 @@ int main(int argc, char *argv[]) {
     }
     glob_context.p_buffer = malloc(sizeof(Buffer));
     allocate_buffer(glob_context.p_buffer, glob_context.stream);
-
-
     glob_context.p_token_rec = malloc(sizeof(TokenRecord)); 
     
-
    
     yyparse();
         

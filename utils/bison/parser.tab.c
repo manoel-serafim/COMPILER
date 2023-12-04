@@ -74,9 +74,12 @@
 #include "macros.h"
 #include <stdio.h>
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
-void yyerror(const char *s);
+void yyerror(char * err);
 
-#line 80 "parser.tab.c"
+
+
+
+#line 83 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -555,13 +558,13 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    15,    15,    19,    20,    24,    25,    29,    30,    34,
-      35,    39,    43,    44,    48,    49,    53,    54,    58,    62,
-      63,    67,    68,    72,    73,    74,    75,    76,    80,    80,
-      84,    85,    89,    93,    94,    98,    99,   103,   104,   108,
-     109,   113,   114,   115,   116,   117,   118,   122,   123,   127,
-     128,   132,   133,   137,   138,   142,   143,   144,   145,   149,
-     153,   154,   158,   159
+       0,    17,    17,    21,    22,    26,    27,    31,    32,    36,
+      37,    41,    45,    46,    50,    51,    55,    56,    60,    64,
+      65,    69,    70,    74,    75,    76,    77,    78,    82,    82,
+      86,    87,    91,    95,    96,   100,   101,   105,   106,   110,
+     111,   115,   116,   117,   118,   119,   120,   124,   125,   129,
+     130,   134,   135,   139,   140,   144,   145,   146,   147,   151,
+     155,   156,   160,   161
 };
 #endif
 
@@ -1195,7 +1198,7 @@ yyreduce:
   switch (yyn)
     {
 
-#line 1199 "parser.tab.c"
+#line 1202 "parser.tab.c"
 
       default: break;
     }
@@ -1388,7 +1391,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 161 "parser.y"
+#line 163 "parser.y"
 
 
 const char* yytokentypeToString(enum yytokentype token) {
@@ -1432,10 +1435,11 @@ const char* yytokentypeToString(enum yytokentype token) {
 }
 
 
-void yyerror(const char *s) {
+void yyerror(char* err) {
     puts(RED"__________________________________________[ SYNTATIC ERROR ]________________________________________");
     int in_line_placement = (glob_context.p_buffer)->line_char_pos;
     fpos_t line_placement = (glob_context.p_buffer)->line_pos;
+    printf(RED"\t [!][!]message: %s"RESET, err);
     printf(CYN"\t[!] THE ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR [!]\n"RESET, (glob_context.p_buffer)->line_number, (glob_context.p_buffer)->line_char_pos);
     printf(YELLOW"\t[!] TOKEN LEXEME: "RED"%s "YELLOW"TOKEN TYPE: "RED"%s "YELLOW"[!]\n", (glob_context.p_token_rec)->lexeme, yytokentypeToString((glob_context.p_token_rec)->type));
     puts(RED"____________________________________________________________________________________________________"RESET);

@@ -4,7 +4,10 @@
 #include "macros.h"
 #include <stdio.h>
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
-void yyerror(const char *s);
+void yyerror(char * err);
+
+
+
 %}
 
 %token ID NUM IF ELSE WHILE RETURN INT VOID PLUS_ALOP MINUS_ALOP MULT_PRE_ALOP DIV_PRE_ALOP EQ_RELOP NOTEQ_RELOP LESSEQ_RELOP GREATEQ_RELOP GREAT_RELOP LESS_RELOP EQUAL CURLYOP_BRACKET CURLYCL_BRACKET CIRCLEOP_BRACKET CIRCLECL_BRACKET SQUAREOP_BRACKET SQUARECL_BRACKET SEMICOL_PUNCT COMMA_PUNCT WHITESPACE COMMENT STRING
@@ -200,10 +203,11 @@ const char* yytokentypeToString(enum yytokentype token) {
 }
 
 
-void yyerror(const char *s) {
+void yyerror(char* err) {
     puts(RED"__________________________________________[ SYNTATIC ERROR ]________________________________________");
     int in_line_placement = (glob_context.p_buffer)->line_char_pos;
     fpos_t line_placement = (glob_context.p_buffer)->line_pos;
+    printf(RED"\t [!][!]message: %s"RESET, err);
     printf(CYN"\t[!] THE ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR [!]\n"RESET, (glob_context.p_buffer)->line_number, (glob_context.p_buffer)->line_char_pos);
     printf(YELLOW"\t[!] TOKEN LEXEME: "RED"%s "YELLOW"TOKEN TYPE: "RED"%s "YELLOW"[!]\n", (glob_context.p_token_rec)->lexeme, yytokentypeToString((glob_context.p_token_rec)->type));
     puts(RED"____________________________________________________________________________________________________"RESET);
