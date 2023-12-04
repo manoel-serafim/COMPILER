@@ -88,11 +88,12 @@ extern int yydebug;
   typedef enum yytokentype yytoken_kind_t;
 #endif
 
-#include "../../include/parser.h"
 /* Value type.  */
-#define YYSTYPE syntax_t_node * //return of bison when ref to $
+#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+typedef int YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
+#endif
 
 
 extern YYSTYPE yylval;

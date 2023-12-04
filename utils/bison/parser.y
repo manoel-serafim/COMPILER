@@ -3,6 +3,9 @@
 #define YYPARSER
 #include "parser.h"
 #include "macros.h"
+#define YYSTYPE syntax_t_node * //return of bison when ref to $
+#define YYSTYPE_IS_TRIVIAL 1
+#define YYSTYPE_IS_DECLARED 1
 #include "lexer.h"
 #include <stdio.h>
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
