@@ -69,15 +69,21 @@
 /* First part of user prologue.  */
 #line 1 "parser.y"
 
-#include <parser.h>
+
+#define YYPARSER
+#include "parser.h"
+#include "macros.h"
+#include "lexer.h"
 #include <stdio.h>
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
 void yyerror(char * err);
 
+static syntax_t_node* syntax_tree_root; //root of the tree
 
 
 
-#line 81 "parser.tab.c"
+
+#line 87 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -556,13 +562,13 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    15,    15,    19,    20,    24,    25,    29,    30,    34,
-      35,    39,    43,    44,    48,    49,    53,    54,    58,    62,
-      63,    67,    68,    72,    73,    74,    75,    76,    80,    80,
-      84,    85,    89,    93,    94,    98,    99,   103,   104,   108,
-     109,   113,   114,   115,   116,   117,   118,   122,   123,   127,
-     128,   132,   133,   137,   138,   142,   143,   144,   145,   149,
-     153,   154,   158,   159
+       0,    21,    21,    25,    26,    30,    31,    35,    36,    40,
+      41,    45,    49,    50,    54,    55,    59,    60,    64,    68,
+      69,    73,    74,    78,    79,    80,    81,    82,    86,    86,
+      90,    91,    95,    99,   100,   104,   105,   109,   110,   114,
+     115,   119,   120,   121,   122,   123,   124,   128,   129,   133,
+     134,   138,   139,   143,   144,   148,   149,   150,   151,   155,
+     159,   160,   164,   165
 };
 #endif
 
@@ -1195,8 +1201,14 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
+  case 2: /* program: declaration_list  */
+#line 21 "parser.y"
+                     { syntax_tree_root = yyvsp[0]; }
+#line 1208 "parser.tab.c"
+    break;
 
-#line 1200 "parser.tab.c"
+
+#line 1212 "parser.tab.c"
 
       default: break;
     }
@@ -1389,7 +1401,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 161 "parser.y"
+#line 167 "parser.y"
 
 
 const char* yytokentypeToString(enum yytokentype token) {

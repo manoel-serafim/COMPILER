@@ -1,16 +1,6 @@
 #ifndef __PARSER_H_
 #define __PARSER_H_
 
-#include "lexer.h"
-
-/*--[GLOBAL STRUCTURES]--*/
-typedef struct {
-    Buffer* p_buffer;
-    FILE* stream;
-    TokenRecord* p_token_rec;
-} ParsingContext;
-
-extern ParsingContext glob_context;
 
 
 /*--[Sintax Tree Definitions]--*/
@@ -33,9 +23,9 @@ typedef struct node
     union {stmt_type stmt; struct exp exp; } has; // node has a stmt or an exp
     union { int op; int val; char* content;} attr;
     
-} sintax_t_node;
+} syntax_t_node;
 
-sintax_t_node* new_stmt_node(stmt_type stmt_type);
-sintax_t_node* new_exp_node(exp_identifier exp_id);
+syntax_t_node* new_stmt_node(stmt_type);
+syntax_t_node* new_exp_node(exp_identifier);
 
 #endif

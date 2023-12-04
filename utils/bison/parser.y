@@ -1,8 +1,14 @@
 %{
-#include <parser.h>
+
+#define YYPARSER
+#include "parser.h"
+#include "macros.h"
+#include "lexer.h"
 #include <stdio.h>
 #define yylex() get_next_token(glob_context.p_buffer, glob_context.stream, glob_context.p_token_rec)
 void yyerror(char * err);
+
+static syntax_t_node* syntax_tree_root; //root of the tree
 
 
 
@@ -12,7 +18,7 @@ void yyerror(char * err);
 
 %%
 program:
-    declaration_list 
+    declaration_list { syntax_tree_root = $1; } //store value
     ;
 
 declaration_list:
