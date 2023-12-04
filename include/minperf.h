@@ -30,9 +30,10 @@
 #endif
 
 #line 6 "def.gperf"
-#include "parser.tab.h"
+#include "../utils/bison/parser.tab.h"
 struct keyword { char *name; yytoken_kind_t type;};
 #include <string.h>
+
 
 #define TOTAL_KEYWORDS 6
 #define MIN_WORD_LENGTH 2

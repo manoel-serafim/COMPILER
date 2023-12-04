@@ -38,7 +38,7 @@ typedef struct {
 // 128 because of the 128 ASCII chars
 /*--[ LexTable - using meaningfull vars not only ints ]--*/
 LexerTableEntry lexerTable[18][128] = { 
-    /*--[ only accepting delimiters that make sense ]--*/
+    /*/*--[ only accepting delimiters that make sense ]--*/
     [START] = {
         /*--[DEFAULTING TO ERROR]--*/
         ['\0'...127] = { ERROR, YYerror, false, false },
@@ -51,7 +51,7 @@ LexerTableEntry lexerTable[18][128] = {
         ['/'] = { IN_DIV_OR_COMM, DIV_PRE_ALOP, true, true }, 
         ['+'] = { DONE, PLUS_ALOP, true, true }, 
         ['-'] = { DONE, MINUS_ALOP, true, true }, 
-        ['*'] = { DONE, IN_MULT_OR_COMM, true, true }, 
+        ['*'] = { IN_MULT_OR_COMM, MULT_PRE_ALOP, true, true }, 
         ['<'] = { IN_LESS_OR_LEQ, LESS_RELOP, true, true }, 
         ['>'] = { IN_GREAT_OR_GEQ, GREAT_RELOP, true, true }, 
         ['='] = { IN_EQ_OR_EQRELOP, EQUAL, true, true }, 
@@ -418,12 +418,11 @@ void indicate_error(Buffer* buffer, LexerTableEntry table_entry, FILE* stream, T
 
 
     printf(YELLOW"\t[!] LEXEME: "RED"%s "YELLOW"[!]\n", token->lexeme);
-    puts(RED"____________________________________________________________________________________________________");
+    puts(RED"____________________________________________________________________________________________________"RESET);
 }
 
 /*--[ get_next_token - reuses previous buffer for optimization - returns into the token ]--*/
-int get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
-
+yytoken_kind_t get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
     char ch;
     LexerTableEntry table_entry = { START, -1, true };
     while( table_entry.next_state != DONE && table_entry.next_state != ERROR ){
@@ -459,7 +458,7 @@ int get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
   
     if(table_entry.next_state == ERROR ) {
         indicate_error(buffer, table_entry, stream, token);
-        return YYerror; 
+        return YYerror;
     }
     //check if id is keyword
     if( table_entry.token_type == ID ){
@@ -470,11 +469,8 @@ int get_next_token( Buffer* buffer, FILE * stream, TokenRecord * token ){
 
     }
     
+    
     token->type = table_entry.token_type;
-    return table_entry.token_type;
+
+    return token->type;
 }
-
-
-
-
-
