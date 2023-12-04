@@ -6,7 +6,9 @@
 #include "libs.h"       //libraries
 #include "buffer.h"
 
-#include "globals.h"
+#ifndef YYPARSE
+#include "../utils/bison/parser.tab.h"
+#endif
 
 /*--[TOKEN DEYYEOFITIONS]--*/
 #define LEXEME_SIZE 256
