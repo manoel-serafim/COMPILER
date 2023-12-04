@@ -62,7 +62,7 @@ var_declaration:
         $2->type= STMT_T; //declaration statement
         
     }
-    | type_specifier identificator SQUAREOP_BRACKET NUM SQUARECL_BRACKET SEMICOL_PUNCT
+    | type_specifier identificator SQUAREOP_BRACKET number SQUARECL_BRACKET SEMICOL_PUNCT
     {
         $$ = $1; //type spec go down semantic value
         $$->child[0]= $2; // Set identificator como filho de VAR_DECL 
