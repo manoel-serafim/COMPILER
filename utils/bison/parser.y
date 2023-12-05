@@ -96,7 +96,7 @@ type_specifier:
     ;
 
 fun_declaration:
-    type_specifier identificator CIRCLEOP_BRACKET parameters CIRCLECL_BRACKET compound_declaration
+    type_specifier identificator CIRCLEOP_BRACKET parameter_list CIRCLECL_BRACKET compound_declaration
     {
         $$ = $1; //set semantic value to type spec, it will have a node for the specific type
         $$->child[0] = $2; //child + left = identificator (name of func)
@@ -106,16 +106,17 @@ fun_declaration:
         $2->type = STMT_T; //function declaration statement
         $$->position[0]= (glob_context.p_buffer)->line_number;
         $$->position[1]= (glob_context.p_buffer)->line_char_pos;
-    }
-    ;
-
-parameters:
-    parameter_list
+    }| type_specifier identificator CIRCLEOP_BRACKET VOID CIRCLECL_BRACKET compound_declaration
     {
-      $$ = $1; //set semantic value to get the parameter declarations
+        $$ = $1; //set semantic value to type spec, it will have a node for the specific type
+        $$->child[0] = $2; //child + left = identificator (name of func)
+        //no parameter$2->child[0] = $4; //pointer to funct args
+        $2->child[1] = $6; // at the side of params it will have the declaration of the procedure
+        $2->has.stmt = FUNCT_SK; // this statement is a function
+        $2->type = STMT_T; //function declaration statement
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
     }
-    | VOID
-    { /*do nothing*/ }
     ;
 
 parameter_list:
@@ -148,7 +149,7 @@ parameter:
     {
         $$ = $1; //get node from spec
         $$->child[0] = $2; //identificator is in left child
-        $2->has.exp.kind = VECT_ID_EK;
+        $2->has.exp.kind = VECT_ID_EK; // over write
         $$->position[0]= (glob_context.p_buffer)->line_number;
         $$->position[1]= (glob_context.p_buffer)->line_char_pos;
     }

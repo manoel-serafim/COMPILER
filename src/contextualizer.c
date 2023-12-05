@@ -47,7 +47,7 @@ bucket_record* bucket_lookup(char * id) {
     }
     return buck_stack;
 }
-//within scope
+//in all acessible scopes (itself + parent)
 bucket_record* bucket_lookup_all_scope(char * id) {
     scope_record* stack_scope = scopes->stack[scopes->stack_size-1];
     int hash_value = hash(id);
@@ -156,10 +156,38 @@ void line_memloc_insert( int memloc, char* scope_id, char* var_id, exp_type var_
 
 
 
+void show_error(syntx_t_node* root, char* err){
+    puts(RED"__________________________________________[ CONTEXT ERROR ]_________________________________________");
+    printf(RED"\t [!][!]message: %s"RESET, err);
+    printf(CYN"\t[!] THE ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR [!]\n"RESET, root->position[0], root->position[1]);
+    puts(RED"____________________________________________________________________________________________________"RESET);
+}
 
 
-
-
+void insert_node_ids(syntax_t_node* root){
+    if(root->type == EXP_T){
+        switch(root->has.exp.kind){
+            
+            case VECT_ID_EK:
+            case ID_EK:
+            // check if is declared in any bucket on all accessible scopes
+                if((bucket_record* buck_list = bucket_lookup_all_scope(root->attr.content)) != NULL){
+                    //found declaration
+                    root->has.exp.type = buck_list->typed_as;
+                    add_var_line_in_scope(root->attr.content, root->position[0]);
+                }else{
+                    //error, trying to reference something not declared
+                    show_error(root, "[SYMBOL TABLE ERROR] Undefined reference");
+                }
+            default:
+                break;
+        }
+    }else if(root->type == STMT_T){
+        switch(root->has.stmt){
+            case VAR_SK :
+        }
+    }
+}
 
 
 
@@ -167,12 +195,20 @@ static void delete_scope_after_insert(syntax_t_node* root){
 
 }
 
+
 /*--[Syntax Tree Traversal]--*/
 /*[path can be taken from front to back(symbol table)]*/
 static void traverse_symtab(syntax_t_node* root){
     
     //create a new scope for global
     global_scope = new_scope("global");
+    //insert scope
+    add_scope_to_chain(global_scope);
+
+    //add default in and out symbol functions
+    /*no default functions -> void symtable_setup(void)*/
+
+
     //recursive base case: root of subtree =NULL
     if(root != NULL){
         insert_node_ids(root);
