@@ -40,17 +40,7 @@ static int hash(char* id){
 
 /*--[Lookup Functions]--*/
 //within scope
-bucket_record* bucket_lookup(char * id) {
 
-    int hash_value = hash(id);
-    bucket_record* buck_stack = scopes.stack[scopes.stack_size-1]->hash_table[hash_value];
-
-    //traverse bucket stack chain until finding the var_id
-    while((buck_stack != NULL) && strcmp(id, buck_stack->identifier)){
-        buck_stack->next;
-    }
-    return buck_stack;
-}
 //in all acessible scopes (itself + parent)
 bucket_record* bucket_lookup_all_scope(char * id) {
     scope_record* stack_scope = scopes.stack[scopes.stack_size-1];
@@ -60,7 +50,7 @@ bucket_record* bucket_lookup_all_scope(char * id) {
     //traverse bucket stack chain until finding the var_id
     while(stack_scope != NULL){
         holder = stack_scope->hash_table[hash_value];
-        while((holder != NULL) && strcmp(id, holder->identifier)){
+        while((holder != NULL) && (strcmp(id, holder->identifier) != 0)){
             holder->next;
         }
         if(holder == NULL){
@@ -103,9 +93,10 @@ void add_var_line_in_scope(char* id, int line_pos){
             while(bucket_line->next != NULL){
                 bucket_line = bucket_line->next;
             }
-            bucket_line->next->next = NULL;
+            
             bucket_line->next = malloc(sizeof(line_record));
             bucket_line->next->line_pos = line_pos;
+            bucket_line->next->next = NULL;
             return; //added
         }
         stack_scope = stack_scope->in;
@@ -124,16 +115,21 @@ void line_memloc_insert( int memloc, char* scope_id, char* var_id, syntax_t_node
 
     bucket_record* buck_list = list_scope->hash_table[hash_value];
     bucket_record* buck_stack = stack_scope->hash_table[hash_value];
-    if(bucket_lookup(var_id)!= NULL){
+    while((buck_stack != NULL) && (strcmp(var_id, buck_stack->identifier)!= 0)){
+        buck_stack->next;
+    }
+    
+    if(buck_stack != NULL){
         //found in the bucket list
         line_record* buck_lines = buck_stack->lines_refered;
         //traverse the lines, get chain edge
         while(buck_lines->next != NULL){
             buck_lines = buck_lines->next;
         }
-        buck_lines->next->next = NULL;
+        //buck_lines->next->next = NULL;
         buck_lines->next = malloc(sizeof(line_record));
         buck_lines->next->line_pos = node->position[0];
+        buck_lines->next->next = NULL;
     }else{//not found
         //add
         //setup of list scope
@@ -179,6 +175,7 @@ int loc=0;
 void insert_node_ids(syntax_t_node* root){
     if(root->type == EXP_T){
         switch(root->has.exp.kind){
+            case VECT_ID_EK:
             case ID_EK:
             {
                 bucket_record* buck_list = bucket_lookup_all_scope(root->attr.content);
@@ -219,7 +216,7 @@ void insert_node_ids(syntax_t_node* root){
             case VECT_SK:
             {
                 //check if decl is unique
-                if(scope_lookup(root->attr.content) != NULL){
+                if(scope_lookup(root->attr.array_specs.identifier) != NULL){
                     show_error(root, "[SYMBOL TABLE ERROR] Vector Variable Redefinition");
                     break;
                 }
@@ -249,7 +246,7 @@ void insert_node_ids(syntax_t_node* root){
                     line_memloc_insert(loc, scp_id, root->attr.content, root);
                 }
 
-                scope_record* new = new_scope((scopes.stack[scopes.stack_size-1])->identifier);
+                scope_record* new = new_scope(root->attr.content);
                 new->in = scopes.stack[scopes.stack_size-1];
                 add_scope_to_chain(new);
                 IS_FIRST;
@@ -284,7 +281,7 @@ void insert_node_ids(syntax_t_node* root){
                   show_error(root, "[TYPE ERROR] Wrong Type For Function Vector Parameter");
                   break;
                 }
-                if(scope_lookup(root->attr.content) != NULL){
+                if(scope_lookup(root->attr.array_specs.identifier) != NULL){
                     show_error(root, "[SYMBOL TABLE ERROR] Redeclaration of Vector Parameter");
                     break;
                 }
@@ -316,14 +313,6 @@ static void delete_scope_after_insert(syntax_t_node* root){
 /*--[Syntax Tree Traversal]--*/
 /*[path can be taken from front to back(symbol table)]*/
 static void traverse_symtab(syntax_t_node* root){
-    
-    //create a new scope for global
-    global_scope = new_scope("global");
-    //insert scope
-    add_scope_to_chain(global_scope);
-
-    //add default in and out symbol functions
-    /*no default functions -> void symtable_setup(void)*/
 
     //recursive base case: root of subtree =NULL
     if(root != NULL){
@@ -335,22 +324,22 @@ static void traverse_symtab(syntax_t_node* root){
     }
 }
 
-/*[path can be taken back to front(type check)]*/
-static void traverse_tpcheck(syntax_t_node* root){
-    //recursive base case: root of subtree =NULL
-    if(root != NULL){
-        for(int i=0; i<MAXCHILDREN; i++){
-            traverse_tpcheck(root->child[i]);
-        }
-        traverse_tpcheck(root->sibling);
-    }
-}
-
 
 /*--[Semantics Analyser]--*/
 /*Type check && Symbol Table*/
 void contextualize(syntax_t_node* root){
+    //create a new scope for global
+    global_scope = new_scope("global");
+    //insert scope
+    add_scope_to_chain(global_scope);
+
+    //add default in and out symbol functions
+    /*no default functions -> void symtable_setup(void)*/
     //build symbol table:
     traverse_symtab(root);
 
+}
+
+void print_symtab(){
+    
 }

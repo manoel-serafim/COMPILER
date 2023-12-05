@@ -20,7 +20,7 @@ typedef struct bucket_record
     struct bucket_record* next;
 } bucket_record;
 
-#define HASH_TABLE_SIZE 300 //have to calc the min
+#define HASH_TABLE_SIZE 293 //have to calc the min at the momment I am just using a big prime number
 typedef struct scope_rec
 {
     char* identifier;//function name or global
