@@ -1,35 +1,34 @@
 #include "contextualizer.h"
 #include "parser.h"
-
-
+#include "libs.h"
 
 /*--[Scope Chain Functions]--*/
 static scope_record* new_scope(char* id){
-    scope_record* new = malloc(sizeof(struct scope_record));
+    scope_record* new = malloc(sizeof(scope_record));
     new->identifier = id;
     return new;
 } 
 static void add_scope_to_chain(scope_record* scp){
-    for(int i=0; i< scopes.list_size; i++){
-        if(strcmp(scopes.list[i]->identifier, scp->identifier) == 0){
+    for(int i=0; i< scopes->list_size; i++){
+        if(strcmp(scopes->list[i]->identifier, scp->identifier) == 0){
             scp->nest += 1;
         }
     }
-    scopes.stack[scopes.stack_size++] = scp;
-    scopes.list[scopes.list_size++]= scp;
+    scopes->stack[scopes->stack_size++] = scp;
+    scopes->list[scopes->list_size++]= scp;
 }
 static void pop_scope(){
-    free(scopes.stack[scopes.stack_size]);
-    scopes.list[scopes.size--]=NULL;
+    free(scopes->stack[scopes->stack_size]);
+    scopes->stack[scopes->stack_size--]=NULL;
 } 
 
 
 /*--[Symbol Tree hash table functions]*/
-/*[extend 4 will mult by four (shifting 100)]*/
+/*[extend 4 will mult by four (shifting b'100)]*/
 static int hash(char* id){
     int extend = 0;
     for(int i=0; id[i] != '\0'; i++){
-        extend = (id[i]+ ((extend<<4)))% HASH_TABLE_SIZE;
+        extend = (id[i]+ (extend<<4))% HASH_TABLE_SIZE;
     }
     return extend;
 }
@@ -37,27 +36,120 @@ static int hash(char* id){
 
 /*--[Lookup Functions]--*/
 //within scope
-bucket_chain* bucket_lookup(char * id) {
+bucket_record* bucket_lookup(char * id) {
 
     int hash_value = hash(id);
-    bucket_chain* buck_stack = scopes.stack[scopes.stack_size-1]->hash_table[hash_value];
+    bucket_record* buck_stack = scopes->stack[scopes->stack_size-1]->hash_table[hash_value];
 
     //traverse bucket stack chain until finding the var_id
-    while(strcmp(var_id, buck_stack->identifier)&&(buck_stack != NULL)){
+    while(strcmp(id, buck_stack->identifier)&&(buck_stack != NULL)){
         buck_stack->next;
     }
     return buck_stack;
 }
+//within scope
+bucket_record* bucket_lookup_all_scope(char * id) {
+    scope_record* stack_scope = scopes->stack[scopes->stack_size-1];
+    int hash_value = hash(id);
+    bucket_record* holder = NULL;
 
+    //traverse bucket stack chain until finding the var_id
+    while(stack_scope != NULL){
+        holder = stack_scope->hash_table[hash_value];
+        while(strcmp(id, holder->identifier)&&(holder != NULL)){
+            holder->next;
+        }
+        if(holder == NULL){
+            stack_scope = stack_scope->in;
+        }else{
+            break;
+        }
+    }
+    return holder; 
+}
+/*scope lookup*/
+scope_record* scope_lookup(char* id){
+    //create holder scope
+    scope_record* holder = NULL;
+    for(int i=0; i<scopes->list_size; i++){
+        if(strcmp(id, scopes->list[i]->identifier)==0){
+            holder = scopes->list[i];
+            break;
+        }
+    }
+    return holder;
+}
 
+/*--[Insertion Functions]--*/
+
+void add_line_to_bucket(bucket_record* bucket, syntax_t_node* node){
+    bucket->lines_refered = malloc(sizeof(line_record));
+    bucket->lines_refered->line_pos = node->position[0];
+    bucket->lines_refered->next = NULL;
+}
+
+void add_var_line_in_scope(char* id, int line_pos){
+    int hash_value = hash(id);
+    scope_record* stack_scope = scopes->stack[scopes->stack_size-1];
+    bucket_record* bucket = stack_scope->hash_table[hash_value];
+
+    while(stack_scope != NULL){ //while there is a scope
+        if(bucket != NULL){ //bucket for ident
+            line_record* bucket_line = bucket->lines_refered;
+            while(bucket_line->next != NULL){
+                bucket_line = bucket_line->next;
+            }
+            bucket_line->next->next = NULL;
+            bucket_line->next = malloc(sizeof(line_record));
+            bucket_line->next->line_pos = line_pos;
+            return; //added
+        }
+        stack_scope = stack_scope->in;
+    }
+
+}
 /*--[Symbol Table Insertions (memloc+linenum)]--*/
 void line_memloc_insert( int memloc, char* scope_id, char* var_id, exp_type var_type, syntax_t_node* node){
     
-    bucket_chain* buck_list = scopes.list[scopes.list_size-1]->hash_table[hash_value];
-    
+    scope_record* list_scope = scopes->list[scopes->list_size-1];
+    scope_record* stack_scope = scopes->stack[scopes->stack_size-1];
+    int hash_value = hash(var_id);
+
+    bucket_record* buck_list = list_scope->hash_table[hash_value];
+    bucket_record* buck_stack = stack_scope->hash_table[hash_value];
     if(bucket_lookup(var_id)!= NULL){
-        //found
+        //found in the bucket list
+        line_record* buck_lines = buck_stack->lines_refered;
+        //traverse the lines, get chain edge
+        while(buck_lines->next != NULL){
+            buck_lines = buck_lines->next;
+        }
+        buck_lines->next->next = NULL;
+        buck_lines->next = malloc(sizeof(line_record));
+        buck_lines->next->line_pos = node->position[0];
+    }else{//not found
+        //add
+        //setup of list scope
+        buck_list = malloc(sizeof(bucket_record));
+        buck_list->identifier = var_id;
+        buck_list->node = node;
+        buck_list->typed_as =  var_type;
+        buck_list->memloc = memloc;
+        add_line_to_bucket(buck_list, node);
+        buck_list->next = stack_scope->hash_table[hash_value];
+        list_scope->hash_table[hash_value] = buck_list;
+
         
+        //setup of stack scope
+        buck_stack = malloc(sizeof(bucket_record));
+        buck_stack->identifier = var_id;
+        buck_stack->node = node;
+        buck_stack->typed_as =  var_type;
+        buck_stack->memloc = memloc;
+        add_line_to_bucket(buck_stack, node);
+        buck_stack->next = stack_scope->hash_table[hash_value];
+        stack_scope->hash_table[hash_value] = buck_stack;
+
     }
 }
 
@@ -85,23 +177,20 @@ static void traverse_symtab(syntax_t_node* root){
     if(root != NULL){
         insert_node_ids(root);
         for(int i=0; i<MAXCHILDREN; i++){
-            traverse(root->child[i], front_back_funct, back_front_funct)
+            traverse_symtab(root->child[i]);
         }
-        back_front_funct(root);
-        traverse(root->sibling, front_back_funct, back_front_funct);
+        traverse_symtab(root->sibling);
     }
 }
 
 /*[path can be taken back to front(type check)]*/
-static void traverse_tpcheck(syntax_t_node* root, void(* front_back_funct)(syntax_t_node*), void(* back_front_funct)(syntax_t_node*)){
+static void traverse_tpcheck(syntax_t_node* root){
     //recursive base case: root of subtree =NULL
     if(root != NULL){
-        front_back_funct(root);
         for(int i=0; i<MAXCHILDREN; i++){
-            traverse(root->child[i], front_back_funct, back_front_funct)
+            traverse_tpcheck(root->child[i]);
         }
-        back_front_funct(root);
-        traverse(root->sibling, front_back_funct, back_front_funct);
+        traverse_tpcheck(root->sibling);
     }
 }
 

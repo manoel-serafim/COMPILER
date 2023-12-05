@@ -22,6 +22,9 @@ $(BUILD_DIR)/parser.tab.o: $(BISON_DIR)/parser.tab.c
 $(BUILD_DIR)/parser.o: $(SRC_DIR)/parser.c $(BUILD_DIR)/parser.tab.o
 	$(CC) -c $< -o $@ $(CFLAGS)
 
+$(BUILD_DIR)/contextualizer.o: $(SRC_DIR)/contextualizer.c
+	$(CC) -c $< -o $@ $(CFLAGS)
+
 bison:
 	cd $(BISON_DIR) && bison -d parser.y	
 

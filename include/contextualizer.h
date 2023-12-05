@@ -8,41 +8,42 @@ typedef struct line_records
 {
     int line_pos;
     struct line_records* next;
-} refered_in_lines;
+} line_record;
 
 typedef struct bucket_record
 {
     char* identifier; //var name
     int memloc; //mem location
-    refered_in_lines* lines_refered; //list of places referenced
+    line_record* lines_refered; //list of places referenced
     syntax_t_node* node; //node of syntax tree
     exp_type typed_as; //{INT,VOID}
     struct bucket_record* next;
-} bucket_chain;
+} bucket_record;
 
-#define HASH_TABLE_SIZE 300
+#define HASH_TABLE_SIZE 300 //have to calc the min
 typedef struct scope_rec
 {
     char* identifier;//function name or global
-    bucket_chain* hash_table[HASH_TABLE_SIZE];
+    bucket_record* hash_table[HASH_TABLE_SIZE];
     struct scope_rec* in;
     int nest;
 }scope_record;
 
 //head of list
-scope_record global_scope;
+scope_record* global_scope;
 
 //scope list parameters inside accessible struct
 typedef struct scope_record_definitions
 {
     scope_record* list[HASH_TABLE_SIZE];
-    int list_size=0;
+    int list_size;
     scope_record* stack[HASH_TABLE_SIZE];
-    int stack_size=0;
+    int stack_size;
 
 }scope_record_stat;
 
-scope_record_stat scopes;
+extern scope_record_stat* scopes; // is declared in main
+
 
 
 
