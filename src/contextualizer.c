@@ -3,6 +3,9 @@
 #include "libs.h"
 #include "macros.h"
 
+scope_record* global_scope;
+scope_record_stat scopes; 
+
 /*--[Scope Chain Functions]--*/
 static scope_record* new_scope(char* id){
     scope_record* new = malloc(sizeof(scope_record));
@@ -10,17 +13,17 @@ static scope_record* new_scope(char* id){
     return new;
 } 
 static void add_scope_to_chain(scope_record* scp){
-    for(int i=0; i< scopes->list_size; i++){
-        if(strcmp(scopes->list[i]->identifier, scp->identifier) == 0){
+    for(int i=0; i< scopes.list_size; i++){
+        if(strcmp(scopes.list[i]->identifier, scp->identifier) == 0){
             scp->nest += 1;
         }
     }
-    scopes->stack[scopes->stack_size++] = scp;
-    scopes->list[scopes->list_size++]= scp;
+    scopes.stack[scopes.stack_size++] = scp;
+    scopes.list[scopes.list_size++]= scp;
 }
 static void pop_scope(){
-    free(scopes->stack[scopes->stack_size]);
-    scopes->stack[scopes->stack_size--]=NULL;
+    free(scopes.stack[scopes.stack_size]);
+    scopes.stack[scopes.stack_size--]=NULL;
 } 
 
 
@@ -40,24 +43,24 @@ static int hash(char* id){
 bucket_record* bucket_lookup(char * id) {
 
     int hash_value = hash(id);
-    bucket_record* buck_stack = scopes->stack[scopes->stack_size-1]->hash_table[hash_value];
+    bucket_record* buck_stack = scopes.stack[scopes.stack_size-1]->hash_table[hash_value];
 
     //traverse bucket stack chain until finding the var_id
-    while(strcmp(id, buck_stack->identifier)&&(buck_stack != NULL)){
+    while((buck_stack != NULL) && strcmp(id, buck_stack->identifier)){
         buck_stack->next;
     }
     return buck_stack;
 }
 //in all acessible scopes (itself + parent)
 bucket_record* bucket_lookup_all_scope(char * id) {
-    scope_record* stack_scope = scopes->stack[scopes->stack_size-1];
+    scope_record* stack_scope = scopes.stack[scopes.stack_size-1];
     int hash_value = hash(id);
     bucket_record* holder = NULL;
 
     //traverse bucket stack chain until finding the var_id
     while(stack_scope != NULL){
         holder = stack_scope->hash_table[hash_value];
-        while(strcmp(id, holder->identifier)&&(holder != NULL)){
+        while((holder != NULL) && strcmp(id, holder->identifier)){
             holder->next;
         }
         if(holder == NULL){
@@ -72,9 +75,9 @@ bucket_record* bucket_lookup_all_scope(char * id) {
 scope_record* scope_lookup(char* id){
     //create holder scope
     scope_record* holder = NULL;
-    for(int i=0; i<scopes->list_size; i++){
-        if(strcmp(id, scopes->list[i]->identifier)==0){
-            holder = scopes->list[i];
+    for(int i=0; i<scopes.list_size; i++){
+        if(strcmp(id, scopes.list[i]->identifier)==0){
+            holder = scopes.list[i];
             break;
         }
     }
@@ -91,7 +94,7 @@ void add_line_to_bucket(bucket_record* bucket, syntax_t_node* node){
 
 void add_var_line_in_scope(char* id, int line_pos){
     int hash_value = hash(id);
-    scope_record* stack_scope = scopes->stack[scopes->stack_size-1];
+    scope_record* stack_scope = scopes.stack[scopes.stack_size-1];
     bucket_record* bucket = stack_scope->hash_table[hash_value];
 
     while(stack_scope != NULL){ //while there is a scope
@@ -111,9 +114,9 @@ void add_var_line_in_scope(char* id, int line_pos){
 }
 /*--[Symbol Table Insertions (memloc+linenum)]--*/
 void line_memloc_insert( int memloc, char* scope_id, char* var_id, syntax_t_node* node){
-    exp_type var_type = node->child[0]->type;
-    scope_record* list_scope = scopes->list[scopes->list_size-1];
-    scope_record* stack_scope = scopes->stack[scopes->stack_size-1];
+    exp_type var_type = node->child[0]->has.exp.type;
+    scope_record* list_scope = scopes.list[scopes.list_size-1];
+    scope_record* stack_scope = scopes.stack[scopes.stack_size-1];
     if(var_id == NULL){
         var_id = "0";
     }
@@ -197,13 +200,6 @@ void insert_node_ids(syntax_t_node* root){
         switch(root->has.stmt){
             case VAR_SK:
             {
-
-                if(is_first_statement = 0){
-                    scope_record* new = new_scope((scopes->stack[scopes->stack_size-1])->identifier);
-                    new->in = scopes->stack[scopes->stack_size-1];
-                    add_scope_to_chain(new);
-                }
-                NOT_FIRST;
                 
                 //check if decl is unique
                 if(scope_lookup(root->attr.content) != NULL){
@@ -211,26 +207,30 @@ void insert_node_ids(syntax_t_node* root){
                     break;
                 }
                 //check if is void
-                if (root->child[0]->type == VOID_T) {
+                if (root->child[0]->has.exp.type == VOID_T) {
                   show_error(root, "[TYPE ERROR] Wrong Type For Variable");
                   break;
                 }
-                char* scp_id = (scopes->stack[scopes->stack_size-1])->identifier;
+                char* scp_id = (scopes.stack[scopes.stack_size-1])->identifier;
                 line_memloc_insert(loc, scp_id, root->attr.content, root);
                 break;
 
             }    
             case VECT_SK:
             {
-                if(is_first_statement = 0){
-                    scope_record* new = new_scope((scopes->stack[scopes->stack_size-1])->identifier);
-                    new->in = scopes->stack[scopes->stack_size-1];
-                    add_scope_to_chain(new);
+                //check if decl is unique
+                if(scope_lookup(root->attr.content) != NULL){
+                    show_error(root, "[SYMBOL TABLE ERROR] Vector Variable Redefinition");
+                    break;
                 }
-                NOT_FIRST;
+                //check if is void
+                if (root->child[0]->has.exp.type == VOID_T) {
+                  show_error(root, "[TYPE ERROR] Wrong Type For Vector Variable");
+                  break;
+                }
                 
-                char* scp_id = (scopes->stack[scopes->stack_size-1])->identifier;
-                line_memloc_insert(loc, scp_id, "0", root);
+                char* scp_id = (scopes.stack[scopes.stack_size-1])->identifier;
+                line_memloc_insert(loc, scp_id, root->attr.array_specs.identifier, root);
                 break;
             }
             case FUNCT_SK:
@@ -242,17 +242,63 @@ void insert_node_ids(syntax_t_node* root){
                     show_error(root, "[SYMBOL TABLE ERROR] Function Redefinition");
                     break;
                 }
-                char* scp_id = (scopes->stack[scopes->stack_size-1])->identifier;
+                char* scp_id = (scopes.stack[scopes.stack_size-1])->identifier;
                 //if in global scope
                 if(strcmp(scp_id, "global") == 0){
                     //insert line ref
                     line_memloc_insert(loc, scp_id, root->attr.content, root);
                 }
 
-                scope_record* new = new_scope((scopes->stack[scopes->stack_size-1])->identifier);
-                new->in = scopes->stack[scopes->stack_size-1];
+                scope_record* new = new_scope((scopes.stack[scopes.stack_size-1])->identifier);
+                new->in = scopes.stack[scopes.stack_size-1];
                 add_scope_to_chain(new);
                 IS_FIRST;
+                break;
+            }
+            case PARAM_SK:
+            {
+                if (root->child[0]->has.exp.type == VOID_T) {
+                  show_error(root, "[TYPE ERROR] Wrong Type For Function Parameter");
+                  break;
+                }
+                if(scope_lookup(root->attr.content) != NULL){
+                    show_error(root, "[SYMBOL TABLE ERROR] Redeclaration of Parameter");
+                    break;
+                }
+                
+                if(is_first_statement = 0){
+                    scope_record* new = new_scope((scopes.stack[scopes.stack_size-1])->identifier);
+                    new->in = scopes.stack[scopes.stack_size-1];
+                    add_scope_to_chain(new);
+                }
+                NOT_FIRST;
+
+                char* scp_id = (scopes.stack[scopes.stack_size-1])->identifier;
+                line_memloc_insert(loc, scp_id, root->attr.content, root);
+                break;
+            }
+
+            case VECT_PARAM_SK:
+            {
+                if (root->child[0]->has.exp.type == VOID_T) {
+                  show_error(root, "[TYPE ERROR] Wrong Type For Function Vector Parameter");
+                  break;
+                }
+                if(scope_lookup(root->attr.content) != NULL){
+                    show_error(root, "[SYMBOL TABLE ERROR] Redeclaration of Vector Parameter");
+                    break;
+                }
+                
+                if(is_first_statement = 0){
+                    scope_record* new = new_scope((scopes.stack[scopes.stack_size-1])->identifier);
+                    new->in = scopes.stack[scopes.stack_size-1];
+                    add_scope_to_chain(new);
+                }
+                NOT_FIRST;
+
+                char* scp_id = (scopes.stack[scopes.stack_size-1])->identifier;
+                line_memloc_insert(loc, scp_id, root->attr.array_specs.identifier, root);
+                break;
             }
             default:
                 break;

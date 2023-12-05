@@ -94,13 +94,19 @@ void print_syntax_tree (syntax_t_node* root){
                     printf("VARIABLE DECLARATION: \"%s\" \n", root->attr.content);
                     break;
                 case VECT_SK:
-                    printf("VECTOR DECLARATION OF SIZE: %d\n", root->attr.array_specs.size);
+                    printf("VECTOR DECLARATION \"%s\" OF SIZE: %d\n", root->attr.array_specs.identifier, root->attr.array_specs.size);
                     break;
                 case FUNCT_SK:
                     printf("FUNCTION DECLARATION: \"%s\" \n", root->attr.content);
                     break;
                 case CALL_SK:
                     printf("CALL: \"%s\" \n", root->attr.content);
+                    break;
+                case PARAM_SK:
+                    printf("VAR PARAM DECLARATION: \"%s\"\n", root->attr.content);
+                    break;
+                case VECT_PARAM_SK:
+                    printf("VECT PARAM DECLARATION: \"%s\" \n", root->attr.array_specs.identifier);
                     break;
                 default:
                     puts("UNKNOWN STATEMENT");

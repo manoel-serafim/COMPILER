@@ -29,8 +29,7 @@ typedef struct scope_rec
     int nest;
 }scope_record;
 
-//head of list
-scope_record* global_scope;
+
 
 //scope list parameters inside accessible struct
 typedef struct scope_record_definitions
@@ -42,15 +41,7 @@ typedef struct scope_record_definitions
 
 }scope_record_stat;
 
-extern scope_record_stat* scopes; // is declared in main
-
-
-
-
-
-
-
-
+// is declared in main
 
 /*--[Semantic Analyzer]--*/
 /*[create symbol table and check for correct var typing]*/

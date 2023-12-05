@@ -1,5 +1,6 @@
 #include "include/lexer.h"
 #include "include/parser.h"
+#include "include/contextualizer.h"
 
 ParsingContext glob_context;
 
@@ -25,8 +26,13 @@ int main(int argc, char *argv[]) {
    
     syntax_t_node* syntax_root = parse();
     print_syntax_tree(syntax_root);
-        
     /*printar arvore*/
+
+
+    if(syntax_root!=NULL){
+        contextualize(syntax_root);
+    }
+    
     
     //cleanup functions
     free(glob_context.p_token_rec);

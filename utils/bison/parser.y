@@ -55,7 +55,7 @@ declaration:
 
 var_declaration:
     type_specifier identificator SEMICOL_PUNCT
-    { //is declared, symbol table will use this info
+    { //is declared, symbol table will use this info overwrite id
         $$ = $2; //type spec go down semantic value
         $$->child[0]= $1; // Set exp type node como filho de VAR_DECL 
         $2->has.stmt = VAR_SK; //simple variable statement
@@ -66,11 +66,10 @@ var_declaration:
     }
     | type_specifier identificator SQUAREOP_BRACKET number SQUARECL_BRACKET SEMICOL_PUNCT
     { //is declared, symbol table will use this info
-        $$ = $2; //type spec go down semantic value
+        $$ = new_stmt_node(VECT_SK); //type spec go down semantic value
         $$->child[0]= $1; // Set identificator como filho de VAR_DECL 
-        $2->has.stmt = VECT_SK; //vector declaration statement
-        $2->attr.array_specs.size = $4->attr.val; // vector[size]
-        $2->type = STMT_T; //declaration statement   
+        $$->attr.array_specs.identifier= $2->attr.content;
+        $$->attr.array_specs.size = $4->attr.val; // vector[size]   
         $$->position[0]= (glob_context.p_buffer)->line_number;
         $$->position[1]= (glob_context.p_buffer)->line_char_pos;
     }
@@ -142,14 +141,17 @@ parameter_list:
 parameter:
     type_specifier identificator
     {
-        $$ = $1; // get node from spec
-        $$->child[0] = $2; // the identificator is the left child of the type spec
+        $$ = new_stmt_node(PARAM_SK); // get node from spec
+        $$->child[0] = $1; // the identificator is the left child of the type spec
+        $$->attr.content = $2->attr.content;
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
     }
     | type_specifier identificator SQUAREOP_BRACKET SQUARECL_BRACKET
     {
-        $$ = $1; //get node from spec
-        $$->child[0] = $2; //identificator is in left child
-        $2->has.exp.kind = VECT_ID_EK; // over write
+        $$ = new_stmt_node(VECT_PARAM_SK); //get node from spec
+        $$->attr.array_specs.identifier= $2->attr.content;
+        $$->child[0] = $1; //type def
         $$->position[0]= (glob_context.p_buffer)->line_number;
         $$->position[1]= (glob_context.p_buffer)->line_char_pos;
     }
