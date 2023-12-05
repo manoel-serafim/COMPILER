@@ -18,13 +18,13 @@ typedef struct bucket_record
     syntax_t_node* node; //node of syntax tree
     exp_type typed_as; //{INT,VOID}
     struct bucket_record* next;
-} var_data_buckets;
+} bucket_chain;
 
 #define HASH_TABLE_SIZE 300
 typedef struct scope_rec
 {
     char* identifier;//function name or global
-    var_data_buckets* hash_table[HASH_TABLE_SIZE];
+    bucket_chain* hash_table[HASH_TABLE_SIZE];
     struct scope_rec* in;
     int nest;
 }scope_record;
@@ -36,7 +36,9 @@ scope_record global_scope;
 typedef struct scope_record_definitions
 {
     scope_record* list[HASH_TABLE_SIZE];
-    int size=0;
+    int list_size=0;
+    scope_record* stack[HASH_TABLE_SIZE];
+    int stack_size=0;
 
 }scope_record_stat;
 

@@ -18,7 +18,7 @@ typedef struct node
 {
     struct node * child[MAXCHILDREN];
     struct node * sibling;
-    int position[2]; //char & line position
+    int position[2]; //line position e char position resp
     node_type type;
     union {stmt_kind stmt; struct exp exp; } has; // node has a stmt or an exp
     union { int op;/*tok type*/ int val;/*value assign*/ int size;/*vector size*/ char* content;/*content of*/} attr; // used in semantic analysis
