@@ -10,6 +10,7 @@ scope_record_stat scopes;
 static scope_record* new_scope(char* id){
     scope_record* new = malloc(sizeof(scope_record));
     new->identifier = id;
+    new->nest=0;
     return new;
 } 
 static void add_scope_to_chain(scope_record* scp){
@@ -340,6 +341,33 @@ void contextualize(syntax_t_node* root){
 
 }
 
-void print_symtab(){
-    
+
+
+
+void print_symbol_tab(){
+    puts("\n\n");
+    for(int i = 1; i<scopes.list_size; i++){
+        //print scope
+        scope_record* holder = scopes.list[i];
+        printf(CYN"\nSCOPE ID: %s;\t NEST LEVEL:%d\n",holder->identifier,holder->nest );
+        printf(GREEN"__________________________________________________________\n"RESET);
+        puts(RED" IDENT\tTYPE\tMEM_OFFSET\tLINES"RESET);
+        bucket_record* buckets = holder->hash_table;
+        for(int j=1; j<HASH_TABLE_SIZE;j++){
+            if(buckets[j] != NULL){
+                bucket_record* buck_hash = buckets[j];
+                syntax_t_node* node = buck_hash->node;
+                while(buck_hash != NULL){
+                    line_record* lines = buck_hash->lines_refered;
+                    //var name
+                    printf("%s\t",buck_hash->identifier);
+                    
+                    //memloc
+                    printf("%s\t",buck_hash->memloc);
+                
+                    buck_hash= buck_hash->next;
+                }
+            }
+        }
+    }
 }

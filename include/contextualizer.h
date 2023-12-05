@@ -46,5 +46,6 @@ typedef struct scope_record_definitions
 /*--[Semantic Analyzer]--*/
 /*[create symbol table and check for correct var typing]*/
 void contextualize(syntax_t_node*);
+void print_symbol_tab(void);
 
 #endif

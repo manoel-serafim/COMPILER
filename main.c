@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
     if(syntax_root!=NULL){
         contextualize(syntax_root);
         puts(GREEN"PASSED"RESET);
+        print_symbol_tab();
     }
     
     
