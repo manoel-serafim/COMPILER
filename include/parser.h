@@ -12,7 +12,10 @@ typedef enum {INT_T, VOID_T, CONST_T} exp_type;
 struct exp {exp_kind kind; exp_type type;};
 
 #define MAXCHILDREN 3 // max of three expressions under each stmt
-
+typedef struct arr{
+    int size;
+    char* identifier;
+} array;
 /*--[Sintax Tree Structure - used also in semantic analysis]--*/
 typedef struct node
 {
@@ -21,7 +24,7 @@ typedef struct node
     int position[2]; //line position e char position resp
     node_type type;
     union {stmt_kind stmt; struct exp exp; } has; // node has a stmt or an exp
-    union { int op;/*tok type*/ int val;/*value assign*/ int size;/*vector size*/ char* content;/*content of*/} attr; // used in semantic analysis
+    union { int op;/*tok type*/ int val;/*value assign*/ array array_specs; char* content;/*content of*/} attr; // used in semantic analysis
     
 } syntax_t_node;
 

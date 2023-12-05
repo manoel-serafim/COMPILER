@@ -1263,8 +1263,8 @@ yyreduce:
   case 7: /* var_declaration: type_specifier identificator SEMICOL_PUNCT  */
 #line 58 "parser.y"
     { //is declared, symbol table will use this info
-        yyval = yyvsp[-2]; //type spec go down semantic value
-        yyval->child[0]= yyvsp[-1]; // Set exp type node como filho de VAR_DECL 
+        yyval = yyvsp[-1]; //type spec go down semantic value
+        yyval->child[0]= yyvsp[-2]; // Set exp type node como filho de VAR_DECL 
         yyvsp[-1]->has.stmt = VAR_SK; //simple variable statement
         yyvsp[-1]->type= STMT_T; //declaration statement
         yyval->position[0]= (glob_context.p_buffer)->line_number;
@@ -1277,10 +1277,10 @@ yyreduce:
   case 8: /* var_declaration: type_specifier identificator SQUAREOP_BRACKET number SQUARECL_BRACKET SEMICOL_PUNCT  */
 #line 68 "parser.y"
     { //is declared, symbol table will use this info
-        yyval = yyvsp[-5]; //type spec go down semantic value
-        yyval->child[0]= yyvsp[-4]; // Set identificator como filho de VAR_DECL 
+        yyval = yyvsp[-4]; //type spec go down semantic value
+        yyval->child[0]= yyvsp[-5]; // Set identificator como filho de VAR_DECL 
         yyvsp[-4]->has.stmt = VECT_SK; //vector declaration statement
-        yyvsp[-4]->attr.size = yyvsp[-2]->attr.val; // vector[size]
+        yyvsp[-4]->attr.array_specs.size = yyvsp[-2]->attr.val; // vector[size]
         yyvsp[-4]->type = STMT_T; //declaration statement   
         yyval->position[0]= (glob_context.p_buffer)->line_number;
         yyval->position[1]= (glob_context.p_buffer)->line_char_pos;
@@ -1315,8 +1315,8 @@ yyreduce:
   case 11: /* fun_declaration: type_specifier identificator CIRCLEOP_BRACKET parameter_list CIRCLECL_BRACKET compound_declaration  */
 #line 100 "parser.y"
     {
-        yyval = yyvsp[-5]; //set semantic value to type spec, it will have a node for the specific type
-        yyval->child[0] = yyvsp[-4]; //child + left = identificator (name of func)
+        yyval = yyvsp[-4]; //set semantic value to type spec, it will have a node for the specific type
+        yyval->child[0] = yyvsp[-5]; //child + left = identificator (name of func)
         yyvsp[-4]->child[0] = yyvsp[-2]; //pointer to funct args
         yyvsp[-4]->child[1] = yyvsp[0]; // at the side of params it will have the declaration of the procedure
         yyvsp[-4]->has.stmt = FUNCT_SK; // this statement is a function
@@ -1330,8 +1330,8 @@ yyreduce:
   case 12: /* fun_declaration: type_specifier identificator CIRCLEOP_BRACKET VOID CIRCLECL_BRACKET compound_declaration  */
 #line 110 "parser.y"
     {
-        yyval = yyvsp[-5]; //set semantic value to type spec, it will have a node for the specific type
-        yyval->child[0] = yyvsp[-4]; //child + left = identificator (name of func)
+        yyval = yyvsp[-4]; //set semantic value to type spec, it will have a node for the specific type
+        yyval->child[0] = yyvsp[-5]; //child + left = identificator (name of func)
         //no parameter$2->child[0] = $4; //pointer to funct args
         yyvsp[-4]->child[1] = yyvsp[0]; // at the side of params it will have the declaration of the procedure
         yyvsp[-4]->has.stmt = FUNCT_SK; // this statement is a function

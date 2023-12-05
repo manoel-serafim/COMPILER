@@ -1,6 +1,7 @@
 #include "contextualizer.h"
 #include "parser.h"
 #include "libs.h"
+#include "macros.h"
 
 /*--[Scope Chain Functions]--*/
 static scope_record* new_scope(char* id){
@@ -109,10 +110,13 @@ void add_var_line_in_scope(char* id, int line_pos){
 
 }
 /*--[Symbol Table Insertions (memloc+linenum)]--*/
-void line_memloc_insert( int memloc, char* scope_id, char* var_id, exp_type var_type, syntax_t_node* node){
-    
+void line_memloc_insert( int memloc, char* scope_id, char* var_id, syntax_t_node* node){
+    exp_type var_type = node->child[0]->type;
     scope_record* list_scope = scopes->list[scopes->list_size-1];
     scope_record* stack_scope = scopes->stack[scopes->stack_size-1];
+    if(var_id == NULL){
+        var_id = "0";
+    }
     int hash_value = hash(var_id);
 
     bucket_record* buck_list = list_scope->hash_table[hash_value];
@@ -156,7 +160,7 @@ void line_memloc_insert( int memloc, char* scope_id, char* var_id, exp_type var_
 
 
 
-void show_error(syntx_t_node* root, char* err){
+void show_error(syntax_t_node* root, char* err){
     puts(RED"__________________________________________[ CONTEXT ERROR ]_________________________________________");
     printf(RED"\t [!][!]message: %s"RESET, err);
     printf(CYN"\t[!] THE ERROR OCCURRED AT THE %zu-th LINE IN THE %zu-th CHAR [!]\n"RESET, root->position[0], root->position[1]);
@@ -164,36 +168,103 @@ void show_error(syntx_t_node* root, char* err){
 }
 
 
+int is_first_statement = 0;
+#define IS_FIRST is_first_statement=1
+#define NOT_FIRST is_first_statement=0
+int loc=0;
+
 void insert_node_ids(syntax_t_node* root){
     if(root->type == EXP_T){
         switch(root->has.exp.kind){
-            
-            case VECT_ID_EK:
             case ID_EK:
-            // check if is declared in any bucket on all accessible scopes
-                if((bucket_record* buck_list = bucket_lookup_all_scope(root->attr.content)) != NULL){
+            {
+                bucket_record* buck_list = bucket_lookup_all_scope(root->attr.content);
+                // check if is declared in any bucket on all accessible scopes
+                if( buck_list != NULL){
                     //found declaration
                     root->has.exp.type = buck_list->typed_as;
                     add_var_line_in_scope(root->attr.content, root->position[0]);
                 }else{
                     //error, trying to reference something not declared
-                    show_error(root, "[SYMBOL TABLE ERROR] Undefined reference");
+                    show_error(root, "[SYMBOL TABLE ERROR] Undefined Reference");
                 }
+                break;
+            }
             default:
                 break;
         }
     }else if(root->type == STMT_T){
         switch(root->has.stmt){
-            case VAR_SK :
+            case VAR_SK:
+            {
+
+                if(is_first_statement = 0){
+                    scope_record* new = new_scope((scopes->stack[scopes->stack_size-1])->identifier);
+                    new->in = scopes->stack[scopes->stack_size-1];
+                    add_scope_to_chain(new);
+                }
+                NOT_FIRST;
+                
+                //check if decl is unique
+                if(scope_lookup(root->attr.content) != NULL){
+                    show_error(root, "[SYMBOL TABLE ERROR] Variable Redefinition");
+                    break;
+                }
+                //check if is void
+                if (root->child[0]->type == VOID_T) {
+                  show_error(root, "[TYPE ERROR] Wrong Type For Variable");
+                  break;
+                }
+                char* scp_id = (scopes->stack[scopes->stack_size-1])->identifier;
+                line_memloc_insert(loc, scp_id, root->attr.content, root);
+                break;
+
+            }    
+            case VECT_SK:
+            {
+                if(is_first_statement = 0){
+                    scope_record* new = new_scope((scopes->stack[scopes->stack_size-1])->identifier);
+                    new->in = scopes->stack[scopes->stack_size-1];
+                    add_scope_to_chain(new);
+                }
+                NOT_FIRST;
+                
+                char* scp_id = (scopes->stack[scopes->stack_size-1])->identifier;
+                line_memloc_insert(loc, scp_id, "0", root);
+                break;
+            }
+            case FUNCT_SK:
+            {   
+                //mem is ofseted by scope addr
+                loc = 0; //memory location zero for scope start
+                //function scope should be new
+                if(scope_lookup(root->attr.content) != NULL){
+                    show_error(root, "[SYMBOL TABLE ERROR] Function Redefinition");
+                    break;
+                }
+                char* scp_id = (scopes->stack[scopes->stack_size-1])->identifier;
+                //if in global scope
+                if(strcmp(scp_id, "global") == 0){
+                    //insert line ref
+                    line_memloc_insert(loc, scp_id, root->attr.content, root);
+                }
+
+                scope_record* new = new_scope((scopes->stack[scopes->stack_size-1])->identifier);
+                new->in = scopes->stack[scopes->stack_size-1];
+                add_scope_to_chain(new);
+                IS_FIRST;
+            }
+            default:
+                break;
         }
     }
 }
 
 
-
+/*
 static void delete_scope_after_insert(syntax_t_node* root){
 
-}
+}*/
 
 
 /*--[Syntax Tree Traversal]--*/
@@ -207,7 +278,6 @@ static void traverse_symtab(syntax_t_node* root){
 
     //add default in and out symbol functions
     /*no default functions -> void symtable_setup(void)*/
-
 
     //recursive base case: root of subtree =NULL
     if(root != NULL){

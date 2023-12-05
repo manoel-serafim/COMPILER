@@ -56,8 +56,8 @@ declaration:
 var_declaration:
     type_specifier identificator SEMICOL_PUNCT
     { //is declared, symbol table will use this info
-        $$ = $1; //type spec go down semantic value
-        $$->child[0]= $2; // Set exp type node como filho de VAR_DECL 
+        $$ = $2; //type spec go down semantic value
+        $$->child[0]= $1; // Set exp type node como filho de VAR_DECL 
         $2->has.stmt = VAR_SK; //simple variable statement
         $2->type= STMT_T; //declaration statement
         $$->position[0]= (glob_context.p_buffer)->line_number;
@@ -66,10 +66,10 @@ var_declaration:
     }
     | type_specifier identificator SQUAREOP_BRACKET number SQUARECL_BRACKET SEMICOL_PUNCT
     { //is declared, symbol table will use this info
-        $$ = $1; //type spec go down semantic value
-        $$->child[0]= $2; // Set identificator como filho de VAR_DECL 
+        $$ = $2; //type spec go down semantic value
+        $$->child[0]= $1; // Set identificator como filho de VAR_DECL 
         $2->has.stmt = VECT_SK; //vector declaration statement
-        $2->attr.size = $4->attr.val; // vector[size]
+        $2->attr.array_specs.size = $4->attr.val; // vector[size]
         $2->type = STMT_T; //declaration statement   
         $$->position[0]= (glob_context.p_buffer)->line_number;
         $$->position[1]= (glob_context.p_buffer)->line_char_pos;
@@ -98,8 +98,8 @@ type_specifier:
 fun_declaration:
     type_specifier identificator CIRCLEOP_BRACKET parameter_list CIRCLECL_BRACKET compound_declaration
     {
-        $$ = $1; //set semantic value to type spec, it will have a node for the specific type
-        $$->child[0] = $2; //child + left = identificator (name of func)
+        $$ = $2; //set semantic value to type spec, it will have a node for the specific type
+        $$->child[0] = $1; //child + left = identificator (name of func)
         $2->child[0] = $4; //pointer to funct args
         $2->child[1] = $6; // at the side of params it will have the declaration of the procedure
         $2->has.stmt = FUNCT_SK; // this statement is a function
@@ -108,8 +108,8 @@ fun_declaration:
         $$->position[1]= (glob_context.p_buffer)->line_char_pos;
     }| type_specifier identificator CIRCLEOP_BRACKET VOID CIRCLECL_BRACKET compound_declaration
     {
-        $$ = $1; //set semantic value to type spec, it will have a node for the specific type
-        $$->child[0] = $2; //child + left = identificator (name of func)
+        $$ = $2; //set semantic value to type spec, it will have a node for the specific type
+        $$->child[0] = $1; //child + left = identificator (name of func)
         //no parameter$2->child[0] = $4; //pointer to funct args
         $2->child[1] = $6; // at the side of params it will have the declaration of the procedure
         $2->has.stmt = FUNCT_SK; // this statement is a function
