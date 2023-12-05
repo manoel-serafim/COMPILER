@@ -55,20 +55,24 @@ declaration:
 
 var_declaration:
     type_specifier identificator SEMICOL_PUNCT
-    {
+    { //is declared, symbol table will use this info
         $$ = $1; //type spec go down semantic value
         $$->child[0]= $2; // Set exp type node como filho de VAR_DECL 
         $2->has.stmt = VAR_SK; //simple variable statement
         $2->type= STMT_T; //declaration statement
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         
     }
     | type_specifier identificator SQUAREOP_BRACKET number SQUARECL_BRACKET SEMICOL_PUNCT
-    {
+    { //is declared, symbol table will use this info
         $$ = $1; //type spec go down semantic value
         $$->child[0]= $2; // Set identificator como filho de VAR_DECL 
         $2->has.stmt = VECT_SK; //vector declaration statement
         $2->attr.size = $4->attr.val; // vector[size]
         $2->type = STMT_T; //declaration statement   
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
     }
     ;
 
@@ -77,12 +81,16 @@ type_specifier:
     {
         //found leaf structure -semantic value of node
         $$=new_exp_node(TYPE_EK); //create new exp node
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->has.exp.type=INT_T;
     }
     | VOID
     {
         //found leaf structure -semantic value of node
         $$=new_exp_node(TYPE_EK); //create new void exp node
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->has.exp.type=VOID_T;
     }
     ;
@@ -96,6 +104,8 @@ fun_declaration:
         $2->child[1] = $6; // at the side of params it will have the declaration of the procedure
         $2->has.stmt = FUNCT_SK; // this statement is a function
         $2->type = STMT_T; //function declaration statement
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
     }
     ;
 
@@ -139,6 +149,8 @@ parameter:
         $$ = $1; //get node from spec
         $$->child[0] = $2; //identificator is in left child
         $2->has.exp.kind = VECT_ID_EK;
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
     }
     ;
 
@@ -244,12 +256,16 @@ selection_declaration:
     IF CIRCLEOP_BRACKET expression CIRCLECL_BRACKET statement
     {
         $$ = new_stmt_node(IF_SK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->child[0] = $3; // get the op expression
         $$->child[1] = $5; // get the then part
     }
     | IF CIRCLEOP_BRACKET expression CIRCLECL_BRACKET statement ELSE statement
     {
         $$ = new_stmt_node(IF_SK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->child[0] = $3; // get the op expression
         $$->child[1] = $5; // get the then part
         $$->child[2] = $7; // else part statement
@@ -260,6 +276,8 @@ iteration_declaration:
     WHILE CIRCLEOP_BRACKET expression CIRCLECL_BRACKET statement
     {
         $$ = new_stmt_node(WHILE_SK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->child[0]= $3; //op expression
         $$->child[1]= $5; // do part statement
     }
@@ -269,10 +287,14 @@ return_declaration:
     RETURN SEMICOL_PUNCT
     {
         $$ = new_stmt_node(RETURN_SK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
     }
     | RETURN expression SEMICOL_PUNCT
     {
         $$ = new_stmt_node(RETURN_SK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->child[0]= $2; // expression returned
     }
     ;
@@ -281,6 +303,8 @@ expression:
     var EQUAL expression
     {
         $$ = new_stmt_node(ASSIGN_SK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->child[0] = $1; // get var of this expression op
         $$->child[1] = $3; // expression assigned
     }
@@ -300,6 +324,8 @@ var:
         $$ = $1;
         $$->child[0] = $3; //Child is the expression in [] use for indexing
         $$->has.exp.kind = VECT_ID_EK; //Expression of vector identifier
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
     }
     ;
 
@@ -320,31 +346,43 @@ relational:
     EQ_RELOP
     {
         $$= new_exp_node(OP_EK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.op= EQ_RELOP;
     }
     | NOTEQ_RELOP
     {
         $$= new_exp_node(OP_EK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.op= NOTEQ_RELOP;
     }
     | LESSEQ_RELOP
     {
         $$= new_exp_node(OP_EK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.op= LESSEQ_RELOP;
     }
     | GREATEQ_RELOP
     {
         $$= new_exp_node(OP_EK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.op= GREATEQ_RELOP;
     }
     | GREAT_RELOP
     {
         $$= new_exp_node(OP_EK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.op= GREAT_RELOP;
     }
     | LESS_RELOP
     {
         $$= new_exp_node(OP_EK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.op= LESS_RELOP;
     }
     ;
@@ -366,11 +404,15 @@ sum:
     PLUS_ALOP
     {
         $$= new_exp_node(OP_EK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.op= PLUS_ALOP;
     }
     | MINUS_ALOP
     {
         $$= new_exp_node(OP_EK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.op= MINUS_ALOP;
     }
     ;
@@ -392,11 +434,15 @@ mult:
      DIV_PRE_ALOP
     {
         $$= new_exp_node(OP_EK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.op= DIV_PRE_ALOP;
     }
     |MULT_PRE_ALOP
     {
         $$= new_exp_node(OP_EK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.op= MULT_PRE_ALOP;
     }
     ;
@@ -427,12 +473,16 @@ activation:
         $$ = $1;//addt
         $$->child[0] = $3; //args
         $$->has.stmt = CALL_SK; 
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->type = STMT_T;
     }
     | identificator CIRCLEOP_BRACKET CIRCLECL_BRACKET
     {//no empty in arguments
         $$ = $1;
         $$->has.stmt = CALL_SK;
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->type = STMT_T;
     }
     ;
@@ -462,6 +512,8 @@ number:
     {
         $$ = new_exp_node(NUM_EK);
         $$->has.exp.type = CONST_T;
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.val = atoi((glob_context.p_token_rec)->lexeme);
     }
 
@@ -469,6 +521,8 @@ identificator:
     ID
     {
         $$ = new_exp_node(ID_EK);
+        $$->position[0]= (glob_context.p_buffer)->line_number;
+        $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         $$->attr.content = cp_str((glob_context.p_token_rec)->lexeme);
     }
 %%

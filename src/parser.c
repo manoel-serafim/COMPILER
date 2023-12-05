@@ -97,7 +97,7 @@ void print_syntax_tree (syntax_t_node* root){
                     printf("VECTOR DECLARATION OF SIZE: %d\n", root->attr.size);
                     break;
                 case FUNCT_SK:
-                    printf("FUNCTION: \"%s\" \n", root->attr.content);
+                    printf("FUNCTION DECLARATION: \"%s\" \n", root->attr.content);
                     break;
                 case CALL_SK:
                     printf("CALL: \"%s\" \n", root->attr.content);
