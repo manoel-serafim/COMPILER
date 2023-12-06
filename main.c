@@ -4,8 +4,11 @@
 
 ParsingContext glob_context;
 
+
 /*  [main function - returns status]  */
 int main(int argc, char *argv[]) {
+    printf("%s",GREEN"_______________________________________________________\n"RESET);
+    puts(GREEN"STARTING TO COMPILE ..."RESET);
 
     if (argc != 2) {
         //NOT ENOUGH ARGS
@@ -30,9 +33,12 @@ int main(int argc, char *argv[]) {
 
 
     if(syntax_root!=NULL){
+        printf("%s",GREEN"_______________________________________________________\n"RESET);
+        puts(GREEN"SYNTAX ANALYSIS COMPLETE"RESET);
         contextualize(syntax_root);
-        puts(GREEN"PASSED"RESET);
         print_symbol_tab();
+        printf("%s",GREEN"_______________________________________________________\n"RESET);
+        puts(GREEN"SEMANTIC ANALYSIS COMPLETE"RESET);
     }
     
     

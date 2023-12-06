@@ -56,10 +56,9 @@ declaration:
 var_declaration:
     type_specifier identificator SEMICOL_PUNCT
     { //is declared, symbol table will use this info overwrite id
-        $$ = $2; //type spec go down semantic value
+        $$ = new_stmt_node(VAR_SK); //type spec go down semantic value
         $$->child[0]= $1; // Set exp type node como filho de VAR_DECL 
-        $2->has.stmt = VAR_SK; //simple variable statement
-        $2->type= STMT_T; //declaration statement
+        $$->attr.content = $2->attr.content;
         $$->position[0]= (glob_context.p_buffer)->line_number;
         $$->position[1]= (glob_context.p_buffer)->line_char_pos;
         

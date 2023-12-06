@@ -210,7 +210,7 @@ void insert_node_ids(syntax_t_node* root){
                   break;
                 }
                 char* scp_id = (scopes.stack[scopes.stack_size-1])->identifier;
-                line_memloc_insert(loc, scp_id, root->attr.content, root);
+                line_memloc_insert(loc++, scp_id, root->attr.content, root);
                 break;
 
             }    
@@ -228,7 +228,7 @@ void insert_node_ids(syntax_t_node* root){
                 }
                 
                 char* scp_id = (scopes.stack[scopes.stack_size-1])->identifier;
-                line_memloc_insert(loc, scp_id, root->attr.array_specs.identifier, root);
+                line_memloc_insert(loc++, scp_id, root->attr.array_specs.identifier, root);
                 break;
             }
             case FUNCT_SK:
@@ -244,7 +244,7 @@ void insert_node_ids(syntax_t_node* root){
                 //if in global scope
                 if(strcmp(scp_id, "global") == 0){
                     //insert line ref
-                    line_memloc_insert(loc, scp_id, root->attr.content, root);
+                    line_memloc_insert(loc++, scp_id, root->attr.content, root);
                 }
 
                 scope_record* new = new_scope(root->attr.content);
@@ -272,7 +272,7 @@ void insert_node_ids(syntax_t_node* root){
                 NOT_FIRST;
 
                 char* scp_id = (scopes.stack[scopes.stack_size-1])->identifier;
-                line_memloc_insert(loc, scp_id, root->attr.content, root);
+                line_memloc_insert(loc++, scp_id, root->attr.content, root);
                 break;
             }
 
@@ -295,7 +295,7 @@ void insert_node_ids(syntax_t_node* root){
                 NOT_FIRST;
 
                 char* scp_id = (scopes.stack[scopes.stack_size-1])->identifier;
-                line_memloc_insert(loc, scp_id, root->attr.array_specs.identifier, root);
+                line_memloc_insert(loc++, scp_id, root->attr.array_specs.identifier, root);
                 break;
             }
             default:
@@ -349,22 +349,71 @@ void print_symbol_tab(){
     for(int i = 1; i<scopes.list_size; i++){
         //print scope
         scope_record* holder = scopes.list[i];
-        printf(CYN"\nSCOPE ID: %s;\t NEST LEVEL:%d\n",holder->identifier,holder->nest );
+        printf(CYN"\nSCOPE ID: %s \t \n",holder->identifier);
         printf(GREEN"__________________________________________________________\n"RESET);
-        puts(RED" IDENT\tTYPE\tMEM_OFFSET\tLINES"RESET);
-        bucket_record* buckets = holder->hash_table;
+        puts(GREEN" IDENT\tMEM_OFFSET\tTYPE\t\tDATA_TYPE\tLINES"YELLOW);
+        bucket_record** buckets = holder->hash_table;
         for(int j=1; j<HASH_TABLE_SIZE;j++){
-            if(buckets[j] != NULL){
+            if(buckets[j] != NULL ){
                 bucket_record* buck_hash = buckets[j];
                 syntax_t_node* node = buck_hash->node;
-                while(buck_hash != NULL){
+                while(buck_hash != NULL && buck_hash->lines_refered->next != NULL){
                     line_record* lines = buck_hash->lines_refered;
+                    
                     //var name
                     printf("%s\t",buck_hash->identifier);
-                    
                     //memloc
-                    printf("%s\t",buck_hash->memloc);
-                
+                    printf("%d\t\t",buck_hash->memloc);
+
+            
+                    switch (node->has.exp.type)
+                    {
+                    case VOID_T:
+                        printf("%s","VOID\t");
+                        break;
+                    case INT_T:
+                        printf("%s","INTEGER\t");
+                        break;
+                    case CONST_T:
+                        printf("%s","CONSTANT\t");
+                        break;
+                    default:
+                        break;
+                    }
+                    
+                    
+
+                    if( node->type == STMT_T){
+                        switch(node->has.stmt){
+                            case CALL_SK:
+                                printf("\tFUNCT CALL");
+                                break;
+                            case FUNCT_SK:
+                                printf("\tFUNCT DECL");
+                                break;
+                            case VAR_SK:
+                                printf("\tVAR DECL");
+                                break;
+                            case VECT_SK:
+                                printf("\tVECT DECL");
+                                break;
+                            case PARAM_SK:
+                                printf("\tPARAM DEF");
+                                break;
+                            case VECT_PARAM_SK:
+                                printf("\tVECT PARAM DEF");
+                                break;
+                            }
+                    }else{
+                        printf("%s","\t");
+                    }
+                    printf("%s[","\t");
+                    while (lines->next != NULL) {
+                      printf("%d ", lines->line_pos);
+                      lines = lines->next;
+                    }
+
+                    puts("] ");
                     buck_hash= buck_hash->next;
                 }
             }

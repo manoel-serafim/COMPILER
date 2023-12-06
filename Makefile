@@ -34,6 +34,7 @@ clean:
 test: $(wildcard utils/samples/*)
 	@echo "Running tests..."
 	@for file in $^; do \
+		echo "\n\n ";\
 		echo "Testing $$file"; \
 		./bin/cmc "$$file"; \
 	done

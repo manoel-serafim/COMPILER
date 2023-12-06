@@ -4,20 +4,20 @@
 
 
 //chained list for referencing variables
-typedef struct line_records
+typedef struct line_rec
 {
     int line_pos;
-    struct line_records* next;
+    struct line_rec* next;
 } line_record;
 
-typedef struct bucket_record
+typedef struct bucket_rec
 {
     char* identifier; //var name
     int memloc; //mem location
     line_record* lines_refered; //list of places referenced
     syntax_t_node* node; //node of syntax tree
     exp_type typed_as; //{INT,VOID}
-    struct bucket_record* next;
+    struct bucket_rec* next;
 } bucket_record;
 
 #define HASH_TABLE_SIZE 293 //have to calc the min at the momment I am just using a big prime number

@@ -61,8 +61,8 @@ const char* exp_type_to_str(exp_type type){
     }
 }
 static int indent_no = -4;
-#define ADD_INDENT indent_no+=4
-#define SUB_INDENT indent_no-=4
+#define ADD_INDENT indent_no+=8
+#define SUB_INDENT indent_no-=8
 
 
 
@@ -125,9 +125,6 @@ void print_syntax_tree (syntax_t_node* root){
                     break;
                 case VECT_ID_EK:
                     printf("VECTOR EXPRESSION: %s\n", root->attr.content);
-                    break;
-                case FUNCT_EK:
-                    puts("FUNCTION DECLARATION");
                     break;
                 case NUM_EK:
                     printf("NUMBER : %d\n", root->attr.val);
