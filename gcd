@@ -1,0 +1,42 @@
+/* Um programa para calcular o mdc
+   segundo o algoritmo de Euclides. */
+int gcd (int u, int v)
+{       
+	if (v == 0) return u ;
+	else return gcd(v,u-u/v*v);
+	/* u-u/v*v == u mod v */
+}
+
+void exe(int x, int y, int z)
+{
+	int a; int b; int c;
+	a = x; b = y; c = z;
+}
+
+void main(void)
+{	
+	void wrongtype; /* [CATCH] WRONG TYPE PARA UMA VARIÁVEL */
+	int x; int y; int z;
+	int gcd;
+	int x; /* NOT UNIQUE VARIABLE STATEMENT*/
+	x= input();
+	b=x; /* EXPRESSION WITH NOT VALID VAR*/
+	/* IF A VAR B IS IN A SCOPE ABOVE IT DOES NOT CATCH IT*/
+	
+	funct(z); /*CALL STATEMENT TO NON EXISTING FUNCTION */
+	x=2;
+	if (x==y) {
+		z = x;
+	} else {
+		if (x>y) {
+			z = x;
+		} else {
+			x=exe(x,y,z);/* ERRO AQUI, EXE NÂO RETORNA NADA */
+		}
+	}
+	x= gcd(z, y, x);
+	x = input(); y = input();
+	output(gcd(x,x,x));
+}
+
+

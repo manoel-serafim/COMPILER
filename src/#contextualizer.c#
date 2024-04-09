@@ -52,7 +52,7 @@ bucket_record* bucket_lookup_all_scope(char * id) {
     while(stack_scope != NULL){
         holder = stack_scope->hash_table[hash_value];
         while((holder != NULL) && (strcmp(id, holder->identifier) != 0)){
-            holder = holder->next;
+            holder->next;
         }
         if(holder == NULL){
             stack_scope = stack_scope->in;
@@ -185,8 +185,23 @@ void insert_node_ids(syntax_t_node* root){
                     //found declaration
                     root->has.exp.type = buck_list->typed_as;
                     add_var_line_in_scope(root->attr.content, root->position[0]);
-                }
-                else{
+		    /* Um programa para calcular o mdc
+   segundo o algoritmo de Euclides. */
+
+int gcd (int u, int v)
+{       
+	if (v == 0) return u ;
+	else return gcd(v,u-u/v*v);
+	/* u-u/v*v == u mod v */
+}
+
+void main(void)
+{	int x; int y;
+	x = input(); y = input();
+	output(gcd(x,y));
+}
+
+                }else{
                     //error, trying to reference something not declared
                     show_error(root, "[SYMBOL TABLE ERROR] Undefined Reference");
                 }
@@ -197,28 +212,11 @@ void insert_node_ids(syntax_t_node* root){
         }
     }else if(root->type == STMT_T){
         switch(root->has.stmt){
-            case CALL_SK:
-            {
-                //check if decl is unique
-                if(scope_lookup(root->attr.content) == NULL ){
-                    show_error(root, "[SYMBOL TABLE ERROR] Call to invalid function");
-                    break;
-                }
-                char* scp_id = (scopes.stack[scopes.stack_size-1])->identifier;
-                line_memloc_insert(loc++, scp_id, root->attr.content, root);
-                break;
-                
-            }
             case VAR_SK:
             {
-                printf("%s", root->attr.content);
+                
                 //check if decl is unique
-                if(scope_lookup(root->attr.content) != NULL ){
-                    show_error(root, "[SYMBOL TABLE ERROR] Variable Declaration with Function Name");
-                    break;
-                }
-                //check if decl is unique
-                if(bucket_lookup_all_scope(root->attr.content) != NULL){
+                if(scope_lookup(root->attr.content) != NULL){
                     show_error(root, "[SYMBOL TABLE ERROR] Variable Redefinition");
                     break;
                 }
@@ -235,7 +233,7 @@ void insert_node_ids(syntax_t_node* root){
             case VECT_SK:
             {
                 //check if decl is unique
-                if(bucket_lookup_all_scope(root->attr.array_specs.identifier) != NULL){
+                if(scope_lookup(root->attr.array_specs.identifier) != NULL){
                     show_error(root, "[SYMBOL TABLE ERROR] Vector Variable Redefinition");
                     break;
                 }
