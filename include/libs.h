@@ -9,6 +9,7 @@
 #include <stdbool.h>    //bool type
 #include <ctype.h>      //isalpha and isdigit
 #include <stdlib.h>     //memory allocations
+#include <stdint.h>     //uint16_t
 
 
 

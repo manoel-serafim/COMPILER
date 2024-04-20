@@ -1,7 +1,7 @@
 #ifndef __PARSER_H_
 #define __PARSER_H_
 
-
+#include "libs.h"
 
 /*--[Sintax Tree Definitions]--*/
 
@@ -24,7 +24,7 @@ typedef struct node
     int position[2]; //line position e char position resp
     node_type type;
     union {stmt_kind stmt; struct exp exp; } has; // node has a stmt or an exp
-    union { int op;/*tok type*/ int val;/*value assign*/ array array_specs; char* content;/*content of*/} attr; // used in semantic analysis
+    union { uint16_t op;/*tok type*/ int val;/*value assign*/ array array_specs; char* content;/*content of*/} attr; // used in semantic analysis
     
 } syntax_t_node;
 

@@ -30,7 +30,10 @@
 #endif
 
 #line 6 "def.gperf"
+
+#ifndef YYPARSE
 #include "../utils/bison/parser.tab.h"
+#endif
 struct keyword { char *name; yytoken_kind_t type;};
 #include <string.h>
 
