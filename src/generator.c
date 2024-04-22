@@ -5,7 +5,8 @@
 #endif
 
 
-quadruple* head;
+quadruple* head = malloc(sizeof quadruple);
+quadruple* start = head->next;
 address holder;
 
 
@@ -61,12 +62,25 @@ static quadruple* generate_expression(syntax_t_node* branch)
             //(branch.attr.op, dest, r2, r3)
             instruction->operation = branch->attr.op;
 
-            //if one of the registers of operand where used, now we can a
+            //if one of the registers of operand where used, now we can free them
+            if(instruction->address[1].type = REGISTER){
+                free_register(instruction->address[1].value);
+            }
+            if(instruction->address[2].type = REGISTER){
+                free_register(instruction->address[2].value);
+            }
 
             head->next = instruction;
             head = head->next;    
+            
+            //The holder is the register in which the op will be stored;
+            holder = instruction->address[0];
+
 
         case ID_EK:
+
+            instruction->address[0].type = REGISTER;
+            instruction->address[0].value = 
         case NUM_EK:
         case TYPE_EK:
         case VECT_ID_EK:
