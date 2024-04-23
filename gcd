@@ -19,7 +19,7 @@ void main(void)
 	int x; int y; int z;
 	int gcd;
 	int x; /* NOT UNIQUE VARIABLE STATEMENT*/
-	x= input("water");
+	x= input();
 	b=x; /* EXPRESSION WITH NOT VALID VAR*/
 	/* IF A VAR B IS IN A SCOPE ABOVE IT DOES NOT CATCH IT*/
 	

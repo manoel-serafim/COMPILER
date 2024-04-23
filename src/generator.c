@@ -6,8 +6,9 @@
 
 
 quadruple* head = malloc(sizeof quadruple);
-quadruple* start = head->next;
+quadruple* start = head;
 address holder;
+char * scope = "global";
 
 
 
@@ -57,17 +58,17 @@ static quadruple* generate_expression(syntax_t_node* branch)
 
             //now we can write the quadruple back inside of the quadruple list
             //dest is a temporary register 
-            instruction->address[0].value = reserve_register();
+            instruction->address[0].content.value = reserve_register();
             instruction->address[0].type = REGISTER;
             //(branch.attr.op, dest, r2, r3)
             instruction->operation = branch->attr.op;
 
             //if one of the registers of operand where used, now we can free them
             if(instruction->address[1].type = REGISTER){
-                free_register(instruction->address[1].value);
+                free_register(instruction->address[1].content.value);
             }
             if(instruction->address[2].type = REGISTER){
-                free_register(instruction->address[2].value);
+                free_register(instruction->address[2].content.value);
             }
 
             head->next = instruction;
@@ -75,15 +76,85 @@ static quadruple* generate_expression(syntax_t_node* branch)
             
             //The holder is the register in which the op will be stored;
             holder = instruction->address[0];
-
+            break;
 
         case ID_EK:
+            instruction->address[1].content.data = scope;
+            instruction->address[1].type = STR;
 
+            instruction->address[2].content.data = branch->attr.content;
+            instruction->address[2].type = STR;
+
+            instruction->operation = LOAD_VAR;
             instruction->address[0].type = REGISTER;
-            instruction->address[0].value = 
+            instruction->address[0].content.value = reserve_register();
+            
+            head->next = instruction;
+            head = head->next;  
+
+            holder = instruction->address[0];
+
+            break;
         case NUM_EK:
+            holder.type = IMMEDIATE;
+            holder.content.value = branch->attr.val;
+
+            break;
+
         case TYPE_EK:
+            generate(branch->child[0]);
+            break;
+
         case VECT_ID_EK:
+            instruction->address[1].content.data = scope;
+            instruction->address[1].type = STR;
+
+            instruction->address[2].content.data = branch->attr.content;
+            instruction->address[2].type = STR;
+
+            instruction->operation = LOAD_VAR;
+            instruction->address[0].type = REGISTER;
+            instruction->address[0].content.value = reserve_register();
+
+            head->next = instruction;
+            head = head->next;  
+            
+            //this will have to generate the op to calc the size
+            adder = malloc(sizeof(quadruple));
+
+            adder->address[1]= instruction->address[0];
+
+            //calc the base addr
+            generate(branch->child[0]);
+
+            adder->address[2] = holder;
+            adder->operation = PLUS_ALOP;
+            adder->address[0].type = REGISTER;
+            adder->address[0].content.value = reserve_register();
+            
+            head->next = adder;
+            head = head->next;  
+
+            vect_loader = malloc(sizeof(quadruple));
+            vect_loader->address[1]= adder->address[0];
+
+            vect_loader->address[0].type = REGISTER;
+            vect_loader->address[0].content.value = reserve_register();
+            
+            vect_loader->address[2] = NULL;
+            vect_loader->operation = LOAD_VECT;
+
+            head->next = vect_loader;
+            head = head->next; 
+
+            holder = vect_loader->address[0];
+
+            break;
+
+
+            break;
+        default:
+			break;
     }
 
 }
