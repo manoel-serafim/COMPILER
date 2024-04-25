@@ -3,10 +3,13 @@
 
 #include "parser.h"
 
-typedef enum {IMMEDIATE,STR,REGISTER,EMPTY} address_type; 
+typedef enum {LOCATION,STR,REGISTER,IMMEDIATE} address_type; 
 typedef enum {
-    LOAD_VAR = 256,
+    LOAD_VAR = 256, 
     LOAD_VECT = 257,
+    BRANCH_IF_NOT_EQUAL = 258,
+    BRANCH = 250;
+    LABEL = 251;
 
     PLUS_ALOP = 266,               /* PLUS_ALOP  */
     MINUS_ALOP = 267,              /* MINUS_ALOP  */
@@ -22,15 +25,14 @@ typedef enum {
 
 typedef struct{
     address_type type;
-    union{
-		int value;
-		char * data;
-	}content;
+	int value;
+	char * data;
 }address;
 
 typedef struct q{
     code operation;
     address address[3];
+    uint location;
     struct q* next;
 }quadruple;
 

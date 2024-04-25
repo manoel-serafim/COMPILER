@@ -9,7 +9,7 @@ quadruple* head = malloc(sizeof quadruple);
 quadruple* start = head;
 address holder;
 char * scope = "global";
-
+uint location = 0;
 
 
 
@@ -36,6 +36,13 @@ uint_8_t reserve_register(){
 
 }
 
+void add_quadruple(quadruple* inst){
+    head->location = location;
+    head->next = inst;
+    head = head->next;
+    location++;
+}
+
 static quadruple* generate_expression(syntax_t_node* branch)
 {
 
@@ -58,46 +65,44 @@ static quadruple* generate_expression(syntax_t_node* branch)
 
             //now we can write the quadruple back inside of the quadruple list
             //dest is a temporary register 
-            instruction->address[0].content.value = reserve_register();
+            instruction->address[0].value = reserve_register();
             instruction->address[0].type = REGISTER;
             //(branch.attr.op, dest, r2, r3)
             instruction->operation = branch->attr.op;
 
             //if one of the registers of operand where used, now we can free them
             if(instruction->address[1].type = REGISTER){
-                free_register(instruction->address[1].content.value);
+                free_register(instruction->address[1].value);
             }
             if(instruction->address[2].type = REGISTER){
-                free_register(instruction->address[2].content.value);
+                free_register(instruction->address[2].value);
             }
 
-            head->next = instruction;
-            head = head->next;    
+            add_quadruple(instruction);
             
             //The holder is the register in which the op will be stored;
             holder = instruction->address[0];
             break;
 
         case ID_EK:
-            instruction->address[1].content.data = scope;
+            instruction->address[1].data = scope;
             instruction->address[1].type = STR;
 
-            instruction->address[2].content.data = branch->attr.content;
+            instruction->address[2].data = branch->attr.content;
             instruction->address[2].type = STR;
 
             instruction->operation = LOAD_VAR;
             instruction->address[0].type = REGISTER;
-            instruction->address[0].content.value = reserve_register();
+            instruction->address[0].value = reserve_register();
             
-            head->next = instruction;
-            head = head->next;  
+            add_quadruple(instruction);
 
             holder = instruction->address[0];
 
             break;
         case NUM_EK:
             holder.type = IMMEDIATE;
-            holder.content.value = branch->attr.val;
+            holder.value = branch->attr.val;
 
             break;
 
@@ -106,18 +111,17 @@ static quadruple* generate_expression(syntax_t_node* branch)
             break;
 
         case VECT_ID_EK:
-            instruction->address[1].content.data = scope;
+            instruction->address[1].data = scope;
             instruction->address[1].type = STR;
 
-            instruction->address[2].content.data = branch->attr.content;
+            instruction->address[2].data = branch->attr.content;
             instruction->address[2].type = STR;
 
             instruction->operation = LOAD_VAR;
             instruction->address[0].type = REGISTER;
-            instruction->address[0].content.value = reserve_register();
+            instruction->address[0].value = reserve_register();
 
-            head->next = instruction;
-            head = head->next;  
+            add_quadruple(instruction);
             
             //this will have to generate the op to calc the size
             adder = malloc(sizeof(quadruple));
@@ -130,22 +134,25 @@ static quadruple* generate_expression(syntax_t_node* branch)
             adder->address[2] = holder;
             adder->operation = PLUS_ALOP;
             adder->address[0].type = REGISTER;
-            adder->address[0].content.value = reserve_register();
+            adder->address[0].value = reserve_register();
             
-            head->next = adder;
-            head = head->next;  
-
+            add_quadruple(adder); 
+            
+            //load the vector with the calculated addr
             vect_loader = malloc(sizeof(quadruple));
+            //load result register as the operand of the next phase
             vect_loader->address[1]= adder->address[0];
 
             vect_loader->address[0].type = REGISTER;
-            vect_loader->address[0].content.value = reserve_register();
+            vect_loader->address[0].value = reserve_register();
             
             vect_loader->address[2] = NULL;
             vect_loader->operation = LOAD_VECT;
 
-            head->next = vect_loader;
-            head = head->next; 
+            
+            add_quadruple(vect_loader);
+
+            free_register(vect_loader->address[1].value);
 
             holder = vect_loader->address[0];
 
@@ -159,11 +166,63 @@ static quadruple* generate_expression(syntax_t_node* branch)
 
 }
 
+char* name_label(uint location){
+
+}
+
 static address generate_statement( syntax_t_node* branch )
 {
+    quadruple* instruction = malloc(sizeof(quadruple));
     switch(branch->has.stmt)
     {
         case IF_SK:
+            //calculating the conditional part of the if
+            generate(branch->child[0]);
+            //conditional part, this holder is a boolean
+            instruction->address[1] = holder;
+
+            //if_condition_false will branch to a not yet disclosed location
+            uint* end_of_if = malloc(sizeof(uint));
+            
+            //the pointer to the BNE dest will have to be stored
+            instruction->address[2].type = LOCATION;
+            //this will be set after all if body: 
+            //instruction->address[2].data
+            //instruction->address[2].value
+
+            //instruction that will branch to the else or to the finish if e1 is false
+            instruction->operation = BRANCH_IF_NOT_EQUAL;
+
+            //no use
+            instruction->address[0] = NULL;
+            
+            //The instruction can be added even if not finished yet (pointer magic)
+            add_quadruple(instruction);
+
+            //generates the if body
+            generate(branch->child[1]);
+
+            //check if there is an else body
+            if(branch->child[2] == NULL){
+                instruction->address[2].data = name_label(location);
+                instruction->address[2].value = location;
+
+                //Create holder label instruction
+                label_instruction = malloc(sizeof(quadruple));
+                label_instruction->operation = LABEL;
+                label_instruction->address[0]= instruction->address[2];
+                label_instruction->address[1]= NULL;
+                label_instruction->address[2]= NULL;
+                add_quadruple(label_instruction);
+            }else{
+                //will have to generate the code for this block
+                //will then use the location to define the end of the true
+                //in true code, will jump to a label at the final of the elseblock
+                //the initial of the else block will be set as instruction->address[2] contents
+            }
+
+            break;
+
         case WHILE_SK:
         case RETURN_SK:
         case ASSIGN_SK:
