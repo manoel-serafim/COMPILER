@@ -215,15 +215,53 @@ static address generate_statement( syntax_t_node* branch )
                 label_instruction->address[2]= NULL;
                 add_quadruple(label_instruction);
             }else{
-                //will have to generate the code for this block
-                //will then use the location to define the end of the true
-                //in true code, will jump to a label at the final of the elseblock
-                //the initial of the else block will be set as instruction->address[2] contents
-            }
 
+                //first need to add the jump at the final of the if true to not exec the else
+                branch_end_else_instruction = malloc(sizeof(quadruple));
+
+                branch_end_else_instruction->operation = BRANCH;
+                branch_end_else_instruction->address[0] = NULL;
+                branch_end_else_instruction->address[1] = NULL;
+                branch_end_else_instruction->address[2].type = LOCATION;
+                //The address 2 will contain the jump addr and will be set latter
+                //add the instruction
+                add_quadruple(branch_end_else_instruction);
+                
+                //Here is the start of the else, if false the initial inst goes to here
+                instruction->address[2].data = name_label(location);
+                instruction->address[2].value = location;
+
+                //will then use the location to define the end of the true
+                //Create holder label  end iftrue instruction
+                label_instruction = malloc(sizeof(quadruple));
+                label_instruction->operation = LABEL;
+                label_instruction->address[0]= instruction->address[2];
+                label_instruction->address[1]= NULL;
+                label_instruction->address[2]= NULL;
+                add_quadruple(label_instruction);
+                
+                //will have to generate the code for this else block
+                generate(branch->child[2]);
+
+                //in true code, will jump to a label at the final of the elseblock
+                branch_end_else_instruction->address[2].data = name_label(location);
+                branch_end_else_instruction->address[2].value = location;
+
+
+                //Create holder label  end iftrue instruction
+                endelselabel_instruction = malloc(sizeof(quadruple));
+                endelselabel_instruction->operation = LABEL;
+                endelselabel_instruction->address[0]= instruction->address[2];
+                endelselabel_instruction->address[1]= NULL;
+                endelselabel_instruction->address[2]= NULL;
+                add_quadruple(endelselabel_instruction);
+
+            }       
             break;
 
         case WHILE_SK:
+            
+            break;
         case RETURN_SK:
         case ASSIGN_SK:
         case VAR_SK:
