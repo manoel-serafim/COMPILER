@@ -249,18 +249,71 @@ static address generate_statement( syntax_t_node* branch )
 
 
                 //Create holder label  end iftrue instruction
-                endelselabel_instruction = malloc(sizeof(quadruple));
-                endelselabel_instruction->operation = LABEL;
-                endelselabel_instruction->address[0]= instruction->address[2];
-                endelselabel_instruction->address[1]= NULL;
-                endelselabel_instruction->address[2]= NULL;
-                add_quadruple(endelselabel_instruction);
+                label_end_else_instruction = malloc(sizeof(quadruple));
+                label_end_else_instruction->operation = LABEL;
+                label_end_else_instruction->address[0]= branch_end_else_instruction->address[2];
+                label_end_else_instruction->address[1]= NULL;
+                label_end_else_instruction->address[2]= NULL;
+                add_quadruple(label_end_else_instruction);
 
             }       
             break;
 
         case WHILE_SK:
+            // while start holder label instruction
+            label_instruction = malloc(sizeof(quadruple));
+            label_instruction->operation = LABEL;
+            //This is the label start while
+            label_instruction->address[0].type = LOCATION;
+            label_instruction->address[0].data = name_label(location);
+            label_instruction->address[0].value= location;
+            //at the final instruction for this section, we can reference a jump if not equal 
+            //to label_instruction->address[0]
+            label_instruction->address[1]= NULL;
+            label_instruction->address[2]= NULL;
+            add_quadruple(label_instruction);
+
+            // beacause it is a while, the condition has to be met
+            // gatter which condition is it
+            generate(branch->child[0]);
+            //see is condition is not met
+            //BNE ENDWHILE
+            instruction->operation = BRANCH_IF_NOT_EQUAL;
+            instruction->address[0]= NULL;
+            instruction->address[1]= holder;
+            instruction->address[2].type = LOCATION;
+
+            add_quadruple(instruction);
+
+            //sec gen the while corp
+            generate(branch->child[1]);
+
+            //BRANCH TO initial to check
+            //BNE ENDWHILE
+            branch_start_instruction = malloc(sizeof(quadruple));
+            branch_start_instruction->operation = BRANCH;
+            branch_start_instruction->address[0]= NULL;
+            branch_start_instruction->address[1]= holder;
+            branch_start_instruction->address[2] = label_instruction->address[0];
+
+            add_quadruple(branch_start_instruction);
+            //now will jump to start_while label
+
+
+
+
+            //here the finish of the while body 
+            //instruction->address[2] is set here to the finish of the while
+            instruction->address[2].data = name_label(location);
+            instruction->address[2].value = location;
             
+            end_while_label_instruction = malloc(sizeof(quadruple));
+            end_while_label_instruction->operation = LABEL;
+            end_while_label_instruction->address[0]= instruction->address[2];
+            end_while_label_instruction->address[1]= NULL;
+            end_while_label_instruction->address[2]= NULL;
+            add_quadruple(end_while_label_instruction);
+
             break;
         case RETURN_SK:
         case ASSIGN_SK:
