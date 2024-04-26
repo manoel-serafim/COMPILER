@@ -97,9 +97,9 @@ fun_declaration:
     type_specifier identificator CIRCLEOP_BRACKET parameter_list CIRCLECL_BRACKET compound_declaration
     {
         $$ = $2; //set semantic value to type spec, it will have a node for the specific type
-        $$->child[0] = $1; //child + left = identificator (name of func)
-        $2->child[0] = $4; //pointer to funct args
-        $2->child[1] = $6; // at the side of params it will have the declaration of the procedure
+        $$->child[0] = $1; //type of the funct
+        $2->child[1] = $4; //the var param dec
+        $2->child[2] = $6; // function code
         $2->has.stmt = FUNCT_SK; // this statement is a function
         $2->type = STMT_T; //function declaration statement
         $$->position[0]= (glob_context.p_buffer)->line_number;
@@ -109,7 +109,7 @@ fun_declaration:
         $$ = $2; //set semantic value to type spec, it will have a node for the specific type
         $$->child[0] = $1; //child + left = identificator (name of func)
         //no parameter$2->child[0] = $4; //pointer to funct args
-        $2->child[1] = $6; // at the side of params it will have the declaration of the procedure
+        $2->child[2] = $6; // at the side of params it will have the declaration of the procedure
         $2->has.stmt = FUNCT_SK; // this statement is a function
         $2->type = STMT_T; //function declaration statement
         $$->position[0]= (glob_context.p_buffer)->line_number;

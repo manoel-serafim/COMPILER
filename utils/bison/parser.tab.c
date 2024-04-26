@@ -1314,9 +1314,9 @@ yyreduce:
 #line 98 "parser.y"
     {
         yyval = yyvsp[-4]; //set semantic value to type spec, it will have a node for the specific type
-        yyval->child[0] = yyvsp[-5]; //child + left = identificator (name of func)
-        yyvsp[-4]->child[0] = yyvsp[-2]; //pointer to funct args
-        yyvsp[-4]->child[1] = yyvsp[0]; // at the side of params it will have the declaration of the procedure
+        yyval->child[0] = yyvsp[-5]; //type of the funct
+        yyvsp[-4]->child[1] = yyvsp[-2]; //the var param dec
+        yyvsp[-4]->child[2] = yyvsp[0]; // function code
         yyvsp[-4]->has.stmt = FUNCT_SK; // this statement is a function
         yyvsp[-4]->type = STMT_T; //function declaration statement
         yyval->position[0]= (glob_context.p_buffer)->line_number;
@@ -1331,7 +1331,7 @@ yyreduce:
         yyval = yyvsp[-4]; //set semantic value to type spec, it will have a node for the specific type
         yyval->child[0] = yyvsp[-5]; //child + left = identificator (name of func)
         //no parameter$2->child[0] = $4; //pointer to funct args
-        yyvsp[-4]->child[1] = yyvsp[0]; // at the side of params it will have the declaration of the procedure
+        yyvsp[-4]->child[2] = yyvsp[0]; // at the side of params it will have the declaration of the procedure
         yyvsp[-4]->has.stmt = FUNCT_SK; // this statement is a function
         yyvsp[-4]->type = STMT_T; //function declaration statement
         yyval->position[0]= (glob_context.p_buffer)->line_number;

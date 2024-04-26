@@ -166,7 +166,20 @@ static quadruple* generate_expression(syntax_t_node* branch)
 
 }
 
-char* name_label(uint location){
+char* name_label(char* type, uint location){
+
+    int location_digits = snprintf(NULL, 0, "%u", location); // Get the number of digits
+    
+    // Calculate the total length of the resulting string
+    size_t len = strlen(type) + location_digits + 1; // +1 for the null terminator
+    
+    char* label = (char*)malloc(sizeof(char) * (len + 1)); // +1 for the null terminator
+    
+    // Format the label string
+    sprintf(label, "%s%u", type, location);
+    
+    return label;
+}
 
 }
 
@@ -204,7 +217,7 @@ static address generate_statement( syntax_t_node* branch )
 
             //check if there is an else body
             if(branch->child[2] == NULL){
-                instruction->address[2].data = name_label(location);
+                instruction->address[2].data = name_label("ENDIF_", location);
                 instruction->address[2].value = location;
 
                 //Create holder label instruction
@@ -228,7 +241,7 @@ static address generate_statement( syntax_t_node* branch )
                 add_quadruple(branch_end_else_instruction);
                 
                 //Here is the start of the else, if false the initial inst goes to here
-                instruction->address[2].data = name_label(location);
+                instruction->address[2].data = name_label("STARTELSE_",location);
                 instruction->address[2].value = location;
 
                 //will then use the location to define the end of the true
@@ -244,7 +257,7 @@ static address generate_statement( syntax_t_node* branch )
                 generate(branch->child[2]);
 
                 //in true code, will jump to a label at the final of the elseblock
-                branch_end_else_instruction->address[2].data = name_label(location);
+                branch_end_else_instruction->address[2].data = name_label("ENDELSE_",location);
                 branch_end_else_instruction->address[2].value = location;
 
 
@@ -265,7 +278,7 @@ static address generate_statement( syntax_t_node* branch )
             label_instruction->operation = LABEL;
             //This is the label start while
             label_instruction->address[0].type = LOCATION;
-            label_instruction->address[0].data = name_label(location);
+            label_instruction->address[0].data = name_label("STARTWHILE_",location);
             label_instruction->address[0].value= location;
             //at the final instruction for this section, we can reference a jump if not equal 
             //to label_instruction->address[0]
@@ -304,7 +317,7 @@ static address generate_statement( syntax_t_node* branch )
 
             //here the finish of the while body 
             //instruction->address[2] is set here to the finish of the while
-            instruction->address[2].data = name_label(location);
+            instruction->address[2].data = name_label("ENDWHILE_",location);
             instruction->address[2].value = location;
             
             end_while_label_instruction = malloc(sizeof(quadruple));
@@ -320,6 +333,10 @@ static address generate_statement( syntax_t_node* branch )
         case VAR_SK:
         case VECT_SK:
         case FUNCT_SK:
+            
+            
+
+            instruction=>operation= LABEL;
         case CALL_SK:
         case PARAM_SK:
         case VECT_PARAM_SK:
