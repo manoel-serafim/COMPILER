@@ -211,6 +211,10 @@ static address generate_statement( syntax_t_node* branch )
             
             //The instruction can be added even if not finished yet (pointer magic)
             add_quadruple(instruction);
+            //free reg for reuse
+            if(instruction->address[1].type == REGISTER){
+                free_register(instruction->address[1].value);
+            }
 
             //generates the if body
             generate(branch->child[1]);
@@ -295,18 +299,22 @@ static address generate_statement( syntax_t_node* branch )
             instruction->address[0]= NULL;
             instruction->address[1]= holder;
             instruction->address[2].type = LOCATION;
-
+            //BNE ENDWHILE
             add_quadruple(instruction);
+
+            if(instruction->address[1].type == REGISTER){
+                free_register(instruction->address[1].value);
+            }
 
             //sec gen the while corp
             generate(branch->child[1]);
 
             //BRANCH TO initial to check
-            //BNE ENDWHILE
+            
             branch_start_instruction = malloc(sizeof(quadruple));
             branch_start_instruction->operation = BRANCH;
             branch_start_instruction->address[0]= NULL;
-            branch_start_instruction->address[1]= holder;
+            branch_start_instruction->address[1]= NULL;
             branch_start_instruction->address[2] = label_instruction->address[0];
 
             add_quadruple(branch_start_instruction);
@@ -334,9 +342,38 @@ static address generate_statement( syntax_t_node* branch )
         case VECT_SK:
         case FUNCT_SK:
             
-            
+            scope = branch->>attr.content;
 
-            instruction=>operation= LABEL;
+            if(strcmp(scope, "main")==0){
+                start->operation = BRANCH;
+                start->address[0] = NULL;
+                start->address[1] = NULL;
+                start->address[2].type = LOCATION;
+                start->address[2].value = location;
+                start->address[2].data = name_label("FUN_",location);
+            }
+            instruction->operation= LABEL;
+            instruction->address[0].type = LOCATION;
+            instruction->address[0].data = name_label("FUN_",location);
+            instruction->address[0].value= location;
+            instruction->address[1]= NULL;
+            instruction->address[2]= NULL;
+            add_quadruple(instruction);
+            
+            //params gen
+            generate(branch->child[1]);
+            //function body gen
+            generate(branch->child[2]);
+
+            //should I add anything when finished?
+
+            scope = "global";
+
+            //clean all registers for reuse
+            registers = 0x00000000;
+
+
+
         case CALL_SK:
         case PARAM_SK:
         case VECT_PARAM_SK:

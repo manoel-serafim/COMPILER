@@ -5,10 +5,10 @@
 
 typedef enum {LOCATION,STR,REGISTER,IMMEDIATE} address_type; 
 typedef enum {
-    LOAD_VAR = 256, 
-    LOAD_VECT = 257,
-    BRANCH_IF_NOT_EQUAL = 258,
-    BRANCH = 250;
+    LOAD_VAR = 256,                /*[0]=reg_addr|[1]=scope|[2]name*/ 
+    LOAD_VECT = 257,               /*[0]=reg_addr|[1]=add_result_sizeaddr|[2]NULL*/      
+    BRANCH_IF_NOT_EQUAL = 258,     /*[0]=NULL|[1]=condition|[2]inst_addr*/
+    BRANCH = 250;                  /*[0]=NULL|[1]=NULL|[2]inst_addr*/
     LABEL = 251;
 
     PLUS_ALOP = 266,               /* PLUS_ALOP  */
