@@ -14,7 +14,7 @@ uint location = 0;
 
 
 
-uint_32_t register_status = 0x80000000;
+uint_32_t register_status = 0x80040000;
 #define SET_BIT(num, pos) ((num) |= (1u << (pos)))
 #define RESET_BIT(num, pos) ((num) &= ~(1u << (pos)))
 
@@ -337,6 +337,25 @@ static address generate_statement( syntax_t_node* branch )
 
             break;
         case RETURN_SK:
+            //Has yo return something?
+            if(branch->child[0]!=NULL){
+                generate(branch->child[0]);
+
+
+                //has to move all the data to a register;
+                instruction->operation = MOVE;
+                instruction->address[0].type= REGISTER;
+                instruction->address[0].value=reserve_register();
+                instruction->address[1]=NULL;
+                instruction->address[2]= holder;
+
+                add_quadruple(instruction);
+
+                holder = instruction->address[0];
+
+
+            }
+            break;
         case ASSIGN_SK:
         case VAR_SK:
         case VECT_SK:
@@ -366,14 +385,13 @@ static address generate_statement( syntax_t_node* branch )
             generate(branch->child[2]);
 
             //should I add anything when finished?
-
+            //need to branch to the link reg
+            //addquad HERE
             scope = "global";
 
             //clean all registers for reuse
-            registers = 0x00000000;
-
-
-
+            registers = 0x80040000;
+            break;
         case CALL_SK:
         case PARAM_SK:
         case VECT_PARAM_SK:
