@@ -357,11 +357,13 @@ static address generate_statement( syntax_t_node* branch )
         case ASSIGN_SK:
 
             generate(branch->child[1]);
+
+            break;
         case VAR_SK:
         case VECT_SK:
         case FUNCT_SK:
             
-            scope = branch->>attr.content;
+            scope = branch->attr.content;
 
             if(strcmp(scope, "main")==0){
                 start->operation = BRANCH;
@@ -369,13 +371,16 @@ static address generate_statement( syntax_t_node* branch )
                 start->address[1] = NULL;
                 start->address[2].type = LOCATION;
                 start->address[2].value = location;
-                start->address[2].data = name_label("FUN_",location);
+                start->address[2].data = name_label(branch->attr.content,location);
+                hash_insert(branch->attr.content, &(start->address[2]));
             }
+
             
             instruction->operation= LABEL;
             instruction->address[0].type = LOCATION;
-            instruction->address[0].data = name_label("FUN_",location);
+            instruction->address[0].data = name_label(branch->attr.content,location);
             instruction->address[0].value= location;
+            hash_insert(branch->attr.content, instruction->address[0]);
             instruction->address[1]= NULL;
             instruction->address[2]= NULL;
             add_quadruple(instruction);
@@ -403,8 +408,69 @@ static address generate_statement( syntax_t_node* branch )
             //clean all registers for reuse
             registers = 0x80060000;
             break;
+
         case CALL_SK:
-        case PARAM_SK:
+            uint param_count = 0;
+            //if not a function without params
+            if(branch->child[0]!=NULL)
+            {
+                syntax_t_node temp = branch;
+                while(temp!= NULL)
+                {
+                    param_count++;
+
+                    //generate it for each of the args, and counting at the same time
+                    switch(temp->type)
+                    {
+                        case EXP_T:
+                            generate_expression(syntax_root);
+                            break;
+                        case STMT_T:
+                            generate_statement(syntax_root);
+                            break;
+                        default:
+                            break;
+                    }
+
+                    parameter_instruction = malloc(sizeof(quadruple));
+                    parameter_instruction->type = PUSH; 
+                    parameter_instruction->address[0]=holder;
+                    parameter_instruction->address[1]=NULL;
+                    parameter_instruction->address[2]=NULL;
+
+                    add_quadruple(parameter_instruction);
+
+                    temp = temp->sibling;
+
+                }
+            }
+
+
+            //In future will have to treat input and output syscalls here
+
+            //add a instruction to jump to the location of the function
+            instruction->type = BRANCH_AND_LINK;
+            intruction->address[0]= NULL;
+            intruction->address[1]= NULL;
+            intruction->address[2]= hash_find(branch->child[0].attr.content);
+            
+
+            add_quadruple(instruction);
+
+            break;
+
+        case PARAM_SK: 
+            // POP all the content that was pushed into the stack
+            //generate a POP instruction for each that is here;
+            instruction->operation = POP;
+            instruction->address[0].type = REGISTER;
+            instruction->address[0].value = reserve_register();
+            instruction->address[1] = NULL;
+            instruction->address[2] = NULL;
+            
+            add_quadruple(instruction);
+            break;
+
         case VECT_PARAM_SK:
     }
 
@@ -423,7 +489,7 @@ quadruple* generate(syntax_t_node* syntax_root){
                 generate_expression(syntax_root);
                 break;
             case STMT_T:
-                generate_expression(syntax_root);
+                generate_statement(syntax_root);
                 break;
             default:
 				break;
@@ -431,3 +497,5 @@ quadruple* generate(syntax_t_node* syntax_root){
         generate(syntax_root->sibling);
     }
 }
+
+

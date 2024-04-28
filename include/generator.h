@@ -8,8 +8,13 @@ typedef enum {
     LOAD_VAR = 256,                /*[0]=reg_addr|[1]=scope|[2]name*/ 
     LOAD_VECT = 257,               /*[0]=reg_addr|[1]=add_result_sizeaddr|[2]NULL*/      
     BRANCH_IF_NOT_EQUAL = 258,     /*[0]=NULL|[1]=condition|[2]inst_addr*/
-    BRANCH = 250;                  /*[0]=NULL|[1]=NULL|[2]inst_addr*/
-    LABEL = 251;                   /*[0]id|[1]NULL|[2]NULL*/
+    BRANCH = 259;                  /*[0]=NULL|[1]=NULL|[2]inst_addr*/
+    LABEL = 260;                   /*[0]id|[1]NULL|[2]NULL*/
+    MOVE = 261;                    /*[0]dest[1]NULL[2]data to ret*/
+    PUSH = 262;                    /*[0]reg or data to push to stack*/
+    POP = 263;                     /*[0]dest to pop to*/
+    BRANCH_AND_LINK = 264;         /*[2]inst_addr*/
+
 
     PLUS_ALOP = 266,               /* PLUS_ALOP  [0]receivesresult*/
     MINUS_ALOP = 267,              /* MINUS_ALOP  */
