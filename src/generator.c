@@ -385,6 +385,9 @@ static address generate_statement( syntax_t_node* branch )
             break;
         case VAR_SK:
         case VECT_SK:
+            //this two types dont actually do something in the assembly
+            //They are used by the program
+            break;
         case FUNCT_SK:
             
             scope = branch->attr.content;
@@ -456,6 +459,10 @@ static address generate_statement( syntax_t_node* branch )
                             break;
                     }
 
+                    //can be pushing the ret
+                    //var addr
+                    //vect addr
+                    //const
                     parameter_instruction = malloc(sizeof(quadruple));
                     parameter_instruction->type = PUSH; 
                     parameter_instruction->address[0]=holder;
@@ -484,6 +491,7 @@ static address generate_statement( syntax_t_node* branch )
             break;
 
         case PARAM_SK: 
+        case VECT_PARAM_SK:
             // POP all the content that was pushed into the stack
             //generate a POP instruction for each that is here;
             instruction->operation = POP;
@@ -494,8 +502,6 @@ static address generate_statement( syntax_t_node* branch )
             
             add_quadruple(instruction);
             break;
-
-        case VECT_PARAM_SK:
     }
 
 }

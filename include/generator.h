@@ -15,8 +15,6 @@ typedef enum {
     POP = 263;                     /*[0]dest to pop to*/
     BRANCH_AND_LINK = 264;         /*[2]inst_addr*/
     STORE = 265,                   /*[0] dest reg with addr; [2] addr with content*/ // translate to STRREG|WORD|DATA
-
-
     PLUS_ALOP = 266,               /* PLUS_ALOP  [0]receivesresult*/
     MINUS_ALOP = 267,              /* MINUS_ALOP  */
     MULT_PRE_ALOP = 268,           /* MULT_PRE_ALOP  */
