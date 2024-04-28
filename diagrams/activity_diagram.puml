@@ -1,0 +1,192 @@
+@startuml
+
+start
+' Syntax Analysis
+:Initialize Parser;
+:Parse tokens;
+note right
+    Syntax analysis verifies the structure of the source code based on the grammar rules of the programming language.
+    It constructs a syntax tree representing the hierarchical structure of the code.
+end note
+' Lexical Analysis
+:Read source code;
+:Initialize Lexer;
+repeat
+  :Get next token;
+note right
+    The lexical analysis phase processes the source code character by character, converting it into tokens.
+    Each token represents a meaningful unit of the source code, such as identifiers, keywords, literals, and operators.
+end note
+
+  if (Token is valid?) then (yes)
+    :Add token to token list;
+  else (no)
+    :Handle lexical error;
+  endif
+  :Initialize Parser;
+:Define YYSTYPE and Tokens;
+:Include Headers;
+:Define Lexical Analysis Functions;
+:Define Error Handling Function;
+
+partition Parsing {
+    :Define Parsing Rules;
+    :Define Grammar Rules;
+    
+    while (More Rules) is (Yes) is (No)
+        :Define Rule;
+    endwhile
+    
+    :Define Semantic Actions;
+}
+
+partition Error Handling {
+    :Implement yyerror();
+}
+
+partition Parsing Function {
+    :Implement parse() function;
+    :Invoke yyparse();
+}
+
+partition Parsing Rules {
+    :Declare Program Rule;
+    :Declare Declaration List Rule;
+    :Declare Declaration Rule;
+    :Declare Var Declaration Rule;
+    :Declare Type Specifier Rule;
+    :Declare Fun Declaration Rule;
+    :Declare Parameter List Rule;
+    :Declare Parameter Rule;
+    :Declare Compound Declaration Rule;
+    :Declare Local Declarations Rule;
+    :Declare Statement List Rule;
+    :Declare Statement Rule;
+    :Declare Expression Declaration Rule;
+    :Declare Selection Declaration Rule;
+    :Declare Iteration Declaration Rule;
+    :Declare Return Declaration Rule;
+    :Declare Expression Rule;
+    :Declare Var Rule;
+    :Declare Simple Expression Rule;
+    :Declare Relational Rule;
+    :Declare Sum Expression Rule;
+    :Declare Sum Rule;
+    :Declare Term Rule;
+    :Declare Mult Rule;
+    :Declare Factor Rule;
+    :Declare Activation Rule;
+    :Declare Argument List Rule;
+    :Declare Number Rule;
+    :Declare Identificator Rule;
+}
+  
+repeat while (More tokens?);
+if (Syntax is valid?) then (yes)
+  :Generate syntax tree;
+else (no)
+  :Handle syntax error;
+endif
+
+' Semantic Analysis
+:Traverse syntax tree;
+:Analyze semantics;
+if (Semantics are valid?) then (yes)
+  :Continue;
+else (no)
+  :Handle semantic error;
+endif
+note right
+    Semantic analysis checks the meaning of the source code beyond its syntax.
+    It enforces language rules related to type compatibility, scope, and declarations.
+end note
+
+' Intermediate Code Generation
+:Generate intermediate representation;
+note right
+    Intermediate code generation transforms the syntax tree into a simpler, language-independent representation.
+    This intermediate code serves as a bridge between the high-level source code and the target machine code.
+end note
+
+' Initialization
+: Initialize hash table;
+: Initialize register status;
+: Initialize starting quadruple;
+: Set scope to "global";
+: Set location counter to 0;
+
+' Main Generation Loop
+repeat
+    : Generate next syntax node;
+    if (Node exists?) then (yes)
+        if (Node is expression?) then (yes)
+            : Generate expression code;
+        else if (Node is statement?) then (yes)
+            : Generate statement code;
+        endif
+    else (no)
+        : Exit loop;
+    endif
+repeat while (More syntax nodes?);
+
+' Expression Generation
+: Determine expression kind;
+if (Expression is operation?) then (yes)
+    : Generate code for operation;
+else if (Expression is identifier?) then (yes)
+    : Generate code for identifier;
+else if (Expression is number?) then (yes)
+    : Generate code for number;
+else if (Expression is type?) then (yes)
+    : Generate code for type;
+else if (Expression is vector identifier?) then (yes)
+    : Generate code for vector identifier;
+endif
+
+' Statement Generation
+: Determine statement kind;
+if (Statement is IF?) then (yes)
+    : Generate code for IF statement;
+else if (Statement is WHILE?) then (yes)
+    : Generate code for WHILE statement;
+else if (Statement is RETURN?) then (yes)
+    : Generate code for RETURN statement;
+else if (Statement is ASSIGN?) then (yes)
+    : Generate code for ASSIGN statement;
+else if (Statement is FUNCTION?) then (yes)
+    : Generate code for FUNCTION statement;
+else if (Statement is CALL?) then (yes)
+    : Generate code for CALL statement;
+else if (Statement is PARAM?) then (yes)
+    : Generate code for PARAM statement;
+else if (Statement is VECTOR PARAM?) then (yes)
+    : Generate code for VECTOR PARAM statement;
+else
+    : Skip statement;
+endif
+
+' Code Printing
+: Print quadruple details;
+
+' Finalization
+: Free memory used by the hash table;
+' Optimization
+if (Optimization enabled?) then (yes)
+  :Apply optimization techniques;
+else (no)
+  :Skip optimization;
+endif
+note right
+    Optimization improves the efficiency and performance of the intermediate code by applying various transformations.
+    Techniques include constant folding, dead code elimination, and loop optimization.
+end note
+
+' Code Generation
+:Generate machine code;
+stop
+note right
+    Code generation translates the optimized intermediate code into machine instructions executable by the target hardware.
+    It involves allocating registers, managing memory, and producing efficient assembly or binary code.
+end note
+
+@enduml
