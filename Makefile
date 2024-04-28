@@ -7,7 +7,7 @@ SAMPLE_DIR= utils/samples
 
 all: bin/cmc
 
-bin/cmc: main.c $(BUILD_DIR)/lexer.o $(BUILD_DIR)/buffer.o $(BUILD_DIR)/parser.tab.o $(BUILD_DIR)/parser.o $(BUILD_DIR)/contextualizer.o
+bin/cmc: main.c $(BUILD_DIR)/lexer.o $(BUILD_DIR)/buffer.o $(BUILD_DIR)/parser.tab.o $(BUILD_DIR)/parser.o $(BUILD_DIR)/contextualizer.o $(BUILD_DIR)/generator.o
 	$(CC) -g -o $@ $^
 
 $(BUILD_DIR)/buffer.o: $(SRC_DIR)/buffer.c
@@ -24,6 +24,10 @@ $(BUILD_DIR)/parser.o: $(SRC_DIR)/parser.c $(BUILD_DIR)/parser.tab.o
 
 $(BUILD_DIR)/contextualizer.o: $(SRC_DIR)/contextualizer.c
 	$(CC) -c $< -o $@ $(CFLAGS)
+
+$(BUILD_DIR)/generator.o: $(SRC_DIR)/generator.c
+	$(CC) -c $< -o $@ $(CFLAGS)
+
 
 bison:
 	cd $(BISON_DIR) && bison -d parser.y	

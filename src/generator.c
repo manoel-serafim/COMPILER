@@ -1,12 +1,83 @@
 #include "parser.h"
 #include "generator.h"
-#ifndef YYPARSE
-#include "../utils/bison/parser.tab.h"
-#endif
 
 
-quadruple* head = malloc(sizeof quadruple);
-quadruple* start = head;
+
+// Define the hash table structure
+#define HASH_SIZE 211 // Size of the hash table
+
+typedef struct {
+    char *key;
+    address* addr;
+    int used; // Flag to check if the slot is used
+} hash_entry;
+
+// Hash function
+unsigned int hash_function(const char *key) {
+    unsigned int hash = 0;
+    while (*key) {
+        hash = (hash * 31) + *key;
+        key++;
+    }
+    return hash % HASH_SIZE;
+}
+hash_entry* hash_table = NULL;
+// Function to initialize the hash table
+void init_hash_table() {
+    hash_entry *table = (hash_entry *)malloc(HASH_SIZE * sizeof(hash_entry));
+   
+    for (int i = 0; i < HASH_SIZE; i++) {
+        table[i].key = NULL;
+        table[i].addr = NULL;
+        table[i].used = 0;
+    }
+    hash_table= table;
+}
+
+// Function to insert a key-value pair into the hash table
+void hash_insert(char *key, address* address) {
+    unsigned int index = hash_function(key);
+    while (hash_table[index].used) { // Linear probing
+        index = (index + 1) % HASH_SIZE;
+    }
+    hash_table[index].key = strdup(key);
+    hash_table[index].addr = address;
+    hash_table[index].used = 1;
+}
+
+// Function to search for a key in the hash table and return the associated address
+address* hash_find(char *key) {
+    unsigned int index = hash_function(key);
+    while (hash_table[index].used) {
+        if (strcmp(hash_table[index].key, key) == 0) {
+            return hash_table[index].addr;
+        }
+        index = (index + 1) % HASH_SIZE;
+    }
+    // If key not found, return a default address
+    address* ext_funct = malloc(sizeof(address));
+    ext_funct->type = LOCATION;
+    ext_funct->data = key;
+    ext_funct->value = 0;
+    return ext_funct;
+}
+
+// Function to deallocate memory used by the hash table
+void free_hash_table(hash_entry *table) {
+    for (int i = 0; i < HASH_SIZE; i++) {
+        if (table[i].used) {
+            free(table[i].key);
+            free(table[i].addr);
+        }
+    }
+    free(table);
+}
+
+
+
+
+quadruple start;
+quadruple* head = &start;
 address holder;
 char * scope = "global";
 uint location = 0;
@@ -14,19 +85,19 @@ uint location = 0;
 
 
 
-uint_32_t register_status = 0x80060000;
+uint32_t register_status = 0x80060000;
 #define SET_BIT(num, pos) ((num) |= (1u << (pos)))
 #define RESET_BIT(num, pos) ((num) &= ~(1u << (pos)))
 
 
 
-static inline free_register(uint_8_t position){
+static inline int free_register(uint position){
     RESET_BIT(register_status, position);
 }
 
-uint_8_t reserve_register(){
+uint8_t reserve_register(){
 
-    uint_8_t i;
+    uint8_t i;
     for (i = 31; i >= 0; i--) {
         if (!(register_status & (1u << i))) {
             SET_BIT(register_status, i);
@@ -124,7 +195,7 @@ static quadruple* generate_expression(syntax_t_node* branch)
             add_quadruple(instruction);
             
             //this will have to generate the op to calc the size
-            adder = malloc(sizeof(quadruple));
+            quadruple* adder = malloc(sizeof(quadruple));
 
             adder->address[1]= instruction->address[0];
 
@@ -132,21 +203,21 @@ static quadruple* generate_expression(syntax_t_node* branch)
             generate(branch->child[0]);
 
             adder->address[2] = holder;
-            adder->operation = PLUS_ALOP;
+            adder->operation = ADD;
             adder->address[0].type = REGISTER;
             adder->address[0].value = reserve_register();
             
             add_quadruple(adder); 
             
             //load the vector with the calculated addr
-            vect_loader = malloc(sizeof(quadruple));
+            quadruple* vect_loader = malloc(sizeof(quadruple));
             //load result register as the operand of the next phase
             vect_loader->address[1]= adder->address[0];
 
             vect_loader->address[0].type = REGISTER;
             vect_loader->address[0].value = reserve_register();
             
-            vect_loader->address[2] = NULL;
+            vect_loader->address[2].type = EMPTY;
             vect_loader->operation = LOAD_VECT;
 
             //get the addr of the referenced vector [base] + [offset]
@@ -181,7 +252,6 @@ char* name_label(char* type, uint location){
     return label;
 }
 
-}
 
 static address generate_statement( syntax_t_node* branch )
 {
@@ -207,7 +277,7 @@ static address generate_statement( syntax_t_node* branch )
             instruction->operation = BRANCH_IF_NOT_EQUAL;
 
             //no use
-            instruction->address[0] = NULL;
+            instruction->address[0].type = EMPTY;
             
             //The instruction can be added even if not finished yet (pointer magic)
             add_quadruple(instruction);
@@ -225,20 +295,20 @@ static address generate_statement( syntax_t_node* branch )
                 instruction->address[2].value = location;
 
                 //Create holder label instruction
-                label_instruction = malloc(sizeof(quadruple));
+                quadruple* label_instruction = malloc(sizeof(quadruple));
                 label_instruction->operation = LABEL;
                 label_instruction->address[0]= instruction->address[2];
-                label_instruction->address[1]= NULL;
-                label_instruction->address[2]= NULL;
+                label_instruction->address[1].type = EMPTY;
+                label_instruction->address[2].type = EMPTY;
                 add_quadruple(label_instruction);
             }else{
 
                 //first need to add the jump at the final of the if true to not exec the else
-                branch_end_else_instruction = malloc(sizeof(quadruple));
+                quadruple* branch_end_else_instruction = malloc(sizeof(quadruple));
 
                 branch_end_else_instruction->operation = BRANCH;
-                branch_end_else_instruction->address[0] = NULL;
-                branch_end_else_instruction->address[1] = NULL;
+                branch_end_else_instruction->address[0].type = EMPTY;
+                branch_end_else_instruction->address[1].type = EMPTY;
                 branch_end_else_instruction->address[2].type = LOCATION;
                 //The address 2 will contain the jump addr and will be set latter
                 //add the instruction
@@ -250,11 +320,11 @@ static address generate_statement( syntax_t_node* branch )
 
                 //will then use the location to define the end of the true
                 //Create holder label  end iftrue instruction
-                label_instruction = malloc(sizeof(quadruple));
+                quadruple* label_instruction = malloc(sizeof(quadruple));
                 label_instruction->operation = LABEL;
                 label_instruction->address[0]= instruction->address[2];
-                label_instruction->address[1]= NULL;
-                label_instruction->address[2]= NULL;
+                label_instruction->address[1].type = EMPTY;
+                label_instruction->address[2].type = EMPTY;
                 add_quadruple(label_instruction);
                 
                 //will have to generate the code for this else block
@@ -266,11 +336,11 @@ static address generate_statement( syntax_t_node* branch )
 
 
                 //Create holder label  end iftrue instruction
-                label_end_else_instruction = malloc(sizeof(quadruple));
+                quadruple* label_end_else_instruction = malloc(sizeof(quadruple));
                 label_end_else_instruction->operation = LABEL;
                 label_end_else_instruction->address[0]= branch_end_else_instruction->address[2];
-                label_end_else_instruction->address[1]= NULL;
-                label_end_else_instruction->address[2]= NULL;
+                label_end_else_instruction->address[1].type = EMPTY;
+                label_end_else_instruction->address[2].type = EMPTY;
                 add_quadruple(label_end_else_instruction);
 
             }       
@@ -278,7 +348,7 @@ static address generate_statement( syntax_t_node* branch )
 
         case WHILE_SK:
             // while start holder label instruction
-            label_instruction = malloc(sizeof(quadruple));
+            quadruple* label_instruction = malloc(sizeof(quadruple));
             label_instruction->operation = LABEL;
             //This is the label start while
             label_instruction->address[0].type = LOCATION;
@@ -286,8 +356,8 @@ static address generate_statement( syntax_t_node* branch )
             label_instruction->address[0].value= location;
             //at the final instruction for this section, we can reference a jump if not equal 
             //to label_instruction->address[0]
-            label_instruction->address[1]= NULL;
-            label_instruction->address[2]= NULL;
+            label_instruction->address[1].type = EMPTY;
+            label_instruction->address[2].type = EMPTY;
             add_quadruple(label_instruction);
 
             // beacause it is a while, the condition has to be met
@@ -296,7 +366,7 @@ static address generate_statement( syntax_t_node* branch )
             //see is condition is not met
             //BNE ENDWHILE
             instruction->operation = BRANCH_IF_NOT_EQUAL;
-            instruction->address[0]= NULL;
+            instruction->address[0].type = EMPTY;
             instruction->address[1]= holder;
             instruction->address[2].type = LOCATION;
             //BNE ENDWHILE
@@ -311,10 +381,10 @@ static address generate_statement( syntax_t_node* branch )
 
             //BRANCH TO initial to check
             
-            branch_start_instruction = malloc(sizeof(quadruple));
+            quadruple* branch_start_instruction = malloc(sizeof(quadruple));
             branch_start_instruction->operation = BRANCH;
-            branch_start_instruction->address[0]= NULL;
-            branch_start_instruction->address[1]= NULL;
+            branch_start_instruction->address[0].type = EMPTY;
+            branch_start_instruction->address[1].type = EMPTY;
             branch_start_instruction->address[2] = label_instruction->address[0];
 
             add_quadruple(branch_start_instruction);
@@ -328,11 +398,11 @@ static address generate_statement( syntax_t_node* branch )
             instruction->address[2].data = name_label("ENDWHILE_",location);
             instruction->address[2].value = location;
             
-            end_while_label_instruction = malloc(sizeof(quadruple));
+            quadruple* end_while_label_instruction = malloc(sizeof(quadruple));
             end_while_label_instruction->operation = LABEL;
             end_while_label_instruction->address[0]= instruction->address[2];
-            end_while_label_instruction->address[1]= NULL;
-            end_while_label_instruction->address[2]= NULL;
+            end_while_label_instruction->address[1].type = EMPTY;
+            end_while_label_instruction->address[2].type = EMPTY;
             add_quadruple(end_while_label_instruction);
 
             break;
@@ -346,7 +416,7 @@ static address generate_statement( syntax_t_node* branch )
                 instruction->operation = MOVE;
                 instruction->address[0].type= REGISTER;
                 instruction->address[0].value=reserve_register();
-                instruction->address[1]=NULL;
+                instruction->address[1].type = EMPTY;
                 instruction->address[2]= holder;
 
                 add_quadruple(instruction);
@@ -372,7 +442,7 @@ static address generate_statement( syntax_t_node* branch )
             //register that holds the data or a immediate that holds the const or the return from a call
             instruction->address[2] = holder;
             
-            instruction->address[1] = NULL;
+            instruction->address[1].type = EMPTY;
             // store the content of holder into the address inside the reg [0]
             instruction->operation = STORE;
 
@@ -393,13 +463,13 @@ static address generate_statement( syntax_t_node* branch )
             scope = branch->attr.content;
 
             if(strcmp(scope, "main")==0){
-                start->operation = BRANCH;
-                start->address[0] = NULL;
-                start->address[1] = NULL;
-                start->address[2].type = LOCATION;
-                start->address[2].value = location;
-                start->address[2].data = name_label(branch->attr.content,location);
-                hash_insert(branch->attr.content, &(start->address[2]));
+                start.operation = BRANCH;
+                start.address[0].type = EMPTY;
+                start.address[1].type = EMPTY;
+                start.address[2].type = LOCATION;
+                start.address[2].value = location;
+                start.address[2].data = name_label(branch->attr.content,location);
+                hash_insert(branch->attr.content, &(start.address[2]));
             }
 
             
@@ -407,9 +477,9 @@ static address generate_statement( syntax_t_node* branch )
             instruction->address[0].type = LOCATION;
             instruction->address[0].data = name_label(branch->attr.content,location);
             instruction->address[0].value= location;
-            hash_insert(branch->attr.content, instruction->address[0]);
-            instruction->address[1]= NULL;
-            instruction->address[2]= NULL;
+            hash_insert(branch->attr.content, &(instruction->address[0]));
+            instruction->address[1].type = EMPTY;
+            instruction->address[2].type = EMPTY;
             add_quadruple(instruction);
             
             //params gen
@@ -419,11 +489,11 @@ static address generate_statement( syntax_t_node* branch )
 
             //should I add anything when finished?
             //need to branch to the link reg 14 is the lr
-            jump_lr_instruction = malloc(sizeof(quadruple));
+            quadruple* jump_lr_instruction = malloc(sizeof(quadruple));
             jump_lr_instruction->operation= MOVE;
             jump_lr_instruction->address[0].type = REGISTER;
             jump_lr_instruction->address[0].value = 15;
-            jump_lr_instruction->address[1] = NULL;
+            jump_lr_instruction->address[1].type = EMPTY;
             jump_lr_instruction->address[0].type = REGISTER;
             jump_lr_instruction->address[0].value = 14;
 
@@ -433,7 +503,7 @@ static address generate_statement( syntax_t_node* branch )
             scope = "global";
 
             //clean all registers for reuse
-            registers = 0x80060000;
+            register_status = 0x80060000;
             break;
 
         case CALL_SK:
@@ -441,7 +511,7 @@ static address generate_statement( syntax_t_node* branch )
             //if not a function without params
             if(branch->child[0]!=NULL)
             {
-                syntax_t_node temp = branch;
+                syntax_t_node* temp = branch->child[0];
                 while(temp!= NULL)
                 {
                     param_count++;
@@ -450,10 +520,10 @@ static address generate_statement( syntax_t_node* branch )
                     switch(temp->type)
                     {
                         case EXP_T:
-                            generate_expression(syntax_root);
+                            generate_expression(temp);
                             break;
                         case STMT_T:
-                            generate_statement(syntax_root);
+                            generate_statement(temp);
                             break;
                         default:
                             break;
@@ -463,11 +533,11 @@ static address generate_statement( syntax_t_node* branch )
                     //var addr
                     //vect addr
                     //const
-                    parameter_instruction = malloc(sizeof(quadruple));
-                    parameter_instruction->type = PUSH; 
+                    quadruple* parameter_instruction = malloc(sizeof(quadruple));
+                    parameter_instruction->operation = PUSH; 
                     parameter_instruction->address[0]=holder;
-                    parameter_instruction->address[1]=NULL;
-                    parameter_instruction->address[2]=NULL;
+                    parameter_instruction->address[1].type = EMPTY;
+                    parameter_instruction->address[2].type = EMPTY;
 
                     add_quadruple(parameter_instruction);
 
@@ -480,10 +550,10 @@ static address generate_statement( syntax_t_node* branch )
             //In future will have to treat input and output syscalls here
 
             //add a instruction to jump to the location of the function
-            instruction->type = BRANCH_AND_LINK;
-            intruction->address[0]= NULL;
-            intruction->address[1]= NULL;
-            intruction->address[2]= hash_find(branch->child[0].attr.content);
+            instruction->operation = BRANCH_AND_LINK;
+            instruction->address[0].type = EMPTY;
+            instruction->address[1].type = EMPTY;
+            instruction->address[2]= *(hash_find(branch->attr.content));
             
 
             add_quadruple(instruction);
@@ -497,8 +567,8 @@ static address generate_statement( syntax_t_node* branch )
             instruction->operation = POP;
             instruction->address[0].type = REGISTER;
             instruction->address[0].value = reserve_register();
-            instruction->address[1] = NULL;
-            instruction->address[2] = NULL;
+            instruction->address[1].type = EMPTY;
+            instruction->address[2].type = EMPTY;
             
             add_quadruple(instruction);
             break;
@@ -529,3 +599,77 @@ quadruple* generate(syntax_t_node* syntax_root){
 }
 
 
+//printer section
+
+const char* operation_strings[] = {
+    "LOAD_VAR",
+    "LOAD_VECT",
+    "BRANCH_IF_NOT_EQUAL",
+    "BRANCH",
+    "LABEL",
+    "MOVE",
+    "PUSH",
+    "POP",
+    "BRANCH_AND_LINK",
+    "STORE",
+    "PLUS_ALOP",
+    "MINUS_ALOP",
+    "MULT_PRE_ALOP",
+    "DIV_PRE_ALOP",
+    "EQ_RELOP",
+    "NOTEQ_RELOP",
+    "LESSEQ_RELOP",
+    "GREATEQ_RELOP",
+    "GREAT_RELOP",
+    "LESS_RELOP"
+};
+
+void print_address(address addr) {
+    switch (addr.type) {
+        case LOCATION:
+            printf(", %s", addr.data);
+            break;
+        case STR:
+            printf(", %s", addr.data);
+            break;
+        case REGISTER:
+            printf(", R%d", addr.value);
+            break;
+        case IMMEDIATE:
+            printf(", %d", addr.value);
+            break;
+        case EMPTY:
+            printf(", _");
+            break;
+        default:
+            printf("Unknown Address Type");
+            break;
+    }
+}
+
+void print_quadruple(quadruple* quad) {
+    printf("%u::", quad->location);
+    printf("%s", operation_strings[quad->operation - LOAD_VAR]);
+    for (int i = 0; i < 3; ++i) {
+            
+        print_address(quad->address[i]);
+       
+    }
+    printf("\n");
+        
+    
+}
+
+void print_quadruple_linked_list(quadruple init) {
+    quadruple* current = &init;
+
+    while (current != NULL) {
+        print_quadruple(current);
+        current = current->next;
+    }
+}
+
+void init_generation(syntax_t_node *  root){
+    init_hash_table();
+    generate(root);
+}

@@ -1,6 +1,7 @@
 #include "include/lexer.h"
 #include "include/parser.h"
 #include "include/contextualizer.h"
+#include "include/generator.h"
 
 ParsingContext glob_context;
 
@@ -40,7 +41,10 @@ int main(int argc, char *argv[]) {
         printf("%s",GREEN"_______________________________________________________\n"RESET);
         puts(GREEN"SEMANTIC ANALYSIS COMPLETE"RESET);
     }
-    
+
+
+    init_generation(syntax_root);
+    print_quadruple_linked_list(start);
     
     //cleanup functions
     free(glob_context.p_token_rec);
