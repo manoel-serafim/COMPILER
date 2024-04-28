@@ -1,0 +1,299 @@
+@startuml
+
+
+
+
+
+/' Objects '/
+
+enum LexerState {
+	DONE
+	ERROR
+	IN_BLOCK_COMMENT
+	IN_COMMENT
+	IN_DIV_OR_COMM
+	IN_EQRELOP
+	IN_EQ_OR_EQRELOP
+	IN_GEQ
+	IN_GREAT_OR_GEQ
+	IN_ID
+	IN_LEQ
+	IN_LESS_OR_LEQ
+	IN_MULT_OR_COMM
+	IN_NOTRELOP
+	IN_NUM
+	IN_STRING
+	OUT_NOTRELOP
+	START
+}
+
+
+enum address_type {
+	EMPTY
+	IMMEDIATE
+	LOCATION
+	REGISTER
+	STR
+}
+
+
+enum code {
+	ADD
+	BRANCH
+	BRANCH_AND_LINK
+	BRANCH_IF_NOT_EQUAL
+	DIV
+	EQ_REL
+	GREATEQ_REL
+	GREAT_REL
+	LABEL
+	LESSEQ_REL
+	LESS_REL
+	LOAD_VAR
+	LOAD_VECT
+	MOVE
+	MULT
+	NOTEQ_REL
+	POP
+	PUSH
+	STORE
+	SUB
+}
+
+
+enum exp_kind {
+	ID_EK
+	NUM_EK
+	OP_EK
+	TYPE_EK
+	VECT_ID_EK
+}
+
+
+enum exp_type {
+	CONST_T
+	INT_T
+	VOID_T
+}
+
+
+enum node_type {
+	EXP_T
+	STMT_T
+}
+
+
+enum stmt_kind {
+	ASSIGN_SK
+	CALL_SK
+	FUNCT_SK
+	IF_SK
+	PARAM_SK
+	RETURN_SK
+	VAR_SK
+	VECT_PARAM_SK
+	VECT_SK
+	WHILE_SK
+}
+
+
+class Buffer {
+	+data : char*
+	+line_pos : fpos_t
+	+line_char_pos : size_t
+	+line_number : size_t
+	+loaded_size : size_t
+	+position : size_t
+}
+
+
+class LexerTableEntry {
+	+next_state : LexerState
+	+consume : bool
+	+store : bool
+	+token_type : yytoken_kind_t
+}
+
+
+class ParsingContext {
+	+p_buffer : Buffer*
+	+stream : FILE*
+	+p_token_rec : TokenRecord*
+}
+
+
+class TokenRecord {
+	+lexeme : char
+	+type : yytoken_kind_t
+}
+
+
+class address {
+	+type : address_type
+	+data : char*
+	+value : unsigned int
+}
+
+
+class array {
+	+identifier : char*
+	+size : int
+}
+
+
+class bucket_record {
+	+identifier : char*
+	+typed_as : exp_type
+	+memloc : int
+	+lines_refered : line_record*
+	+next : struct bucket_rec*
+	+node : syntax_t_node*
+}
+
+
+class exp {
+	+kind : exp_kind
+	+type : exp_type
+}
+
+
+class hash_entry {
+	+addr : address*
+	+key : char*
+	+used : int
+}
+
+
+class keyword {
+	+name : char*
+	+type : yytoken_kind_t
+}
+
+
+class line_record {
+	+line_pos : int
+	+next : struct line_rec*
+}
+
+
+class quadruple {
+	+address : address
+	+operation : code
+	+next : struct q*
+	+location : unsigned int
+}
+
+
+class scope_record {
+	+hash_table : bucket_record*
+	+identifier : char*
+	+nest : int
+	+in : struct scope_rec*
+}
+
+
+class scope_record_stat {
+	+list_size : int
+	+stack_size : int
+	+list : scope_record*
+	+stack : scope_record*
+}
+
+
+class syntax_t_node {
+	+has : <anon-union-1>
+	+attr : <anon-union-2>
+	+position : int
+	+type : node_type
+	+child : struct node*
+	+sibling : struct node*
+}
+
+
+class node::anon_union_1 {
+	+stmt : stmt_kind
+	+exp : struct exp
+}
+
+
+class node::anon_union_2 {
+	+array_specs : array
+	+content : char*
+	+val : int
+	+op : uint16_t
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+
+
+
+/' Aggregation relationships '/
+
+.LexerTableEntry *-- .LexerState
+
+
+.ParsingContext o-- .Buffer
+
+
+.ParsingContext o-- .TokenRecord
+
+
+.address *-- .address_type
+
+
+.bucket_record *-- .exp_type
+
+
+.bucket_record o-- .line_record
+
+
+.bucket_record o-- .syntax_t_node
+
+
+.exp *-- .exp_kind
+
+
+.exp *-- .exp_type
+
+
+.hash_entry o-- .address
+
+
+.node::anon_union_1 *-- .exp
+
+
+.node::anon_union_1 *-- .stmt_kind
+
+
+.node::anon_union_2 *-- .array
+
+
+.quadruple *-- .address
+
+
+.quadruple *-- .code
+
+
+.scope_record o-- .bucket_record
+
+
+.scope_record_stat "2" o-- .scope_record
+
+
+.syntax_t_node *-- .node_type
+
+
+
+
+
+
+/' Nested objects '/
+
+
+
+@enduml

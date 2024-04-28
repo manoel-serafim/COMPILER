@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
     }
 
 
+    //intermediate code generation
     init_generation(syntax_root);
     print_quadruple_linked_list(start);
     
