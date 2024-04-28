@@ -14,7 +14,7 @@ uint location = 0;
 
 
 
-uint_32_t register_status = 0x80040000;
+uint_32_t register_status = 0x80060000;
 #define SET_BIT(num, pos) ((num) |= (1u << (pos)))
 #define RESET_BIT(num, pos) ((num) &= ~(1u << (pos)))
 
@@ -352,11 +352,11 @@ static address generate_statement( syntax_t_node* branch )
                 add_quadruple(instruction);
 
                 holder = instruction->address[0];
-
-
             }
             break;
         case ASSIGN_SK:
+
+            generate(branch->child[1]);
         case VAR_SK:
         case VECT_SK:
         case FUNCT_SK:
@@ -371,6 +371,7 @@ static address generate_statement( syntax_t_node* branch )
                 start->address[2].value = location;
                 start->address[2].data = name_label("FUN_",location);
             }
+            
             instruction->operation= LABEL;
             instruction->address[0].type = LOCATION;
             instruction->address[0].data = name_label("FUN_",location);
@@ -385,12 +386,22 @@ static address generate_statement( syntax_t_node* branch )
             generate(branch->child[2]);
 
             //should I add anything when finished?
-            //need to branch to the link reg
+            //need to branch to the link reg 14 is the lr
+            jump_lr_instruction = malloc(sizeof(quadruple));
+            jump_lr_instruction->operation= MOVE;
+            jump_lr_instruction->address[0].type = REGISTER;
+            jump_lr_instruction->address[0].value = 15;
+            jump_lr_instruction->address[1] = NULL;
+            jump_lr_instruction->address[0].type = REGISTER;
+            jump_lr_instruction->address[0].value = 14;
+
+            add_quadruple(jump_lr_instruction);
+
             //addquad HERE
             scope = "global";
 
             //clean all registers for reuse
-            registers = 0x80040000;
+            registers = 0x80060000;
             break;
         case CALL_SK:
         case PARAM_SK:
