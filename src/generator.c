@@ -108,10 +108,12 @@ uint8_t reserve_register(){
 }
 
 void add_quadruple(quadruple* inst){
+    
     head->location = location;
     head->next = inst;
     head = head->next;
     location++;
+
 }
 
 static quadruple* generate_expression(syntax_t_node* branch)
@@ -291,8 +293,8 @@ static address generate_statement( syntax_t_node* branch )
 
             //check if there is an else body
             if(branch->child[2] == NULL){
-                instruction->address[2].data = name_label("ENDIF_", location);
-                instruction->address[2].value = location;
+                instruction->address[2].data = name_label("ENDIF_", location+1);
+                instruction->address[2].value = location+1;
 
                 //Create holder label instruction
                 quadruple* label_instruction = malloc(sizeof(quadruple));
@@ -315,8 +317,8 @@ static address generate_statement( syntax_t_node* branch )
                 add_quadruple(branch_end_else_instruction);
                 
                 //Here is the start of the else, if false the initial inst goes to here
-                instruction->address[2].data = name_label("STARTELSE_",location);
-                instruction->address[2].value = location;
+                instruction->address[2].data = name_label("STARTELSE_",location+1);
+                instruction->address[2].value = location+1;
 
                 //will then use the location to define the end of the true
                 //Create holder label  end iftrue instruction
@@ -331,8 +333,8 @@ static address generate_statement( syntax_t_node* branch )
                 generate(branch->child[2]);
 
                 //in true code, will jump to a label at the final of the elseblock
-                branch_end_else_instruction->address[2].data = name_label("ENDELSE_",location);
-                branch_end_else_instruction->address[2].value = location;
+                branch_end_else_instruction->address[2].data = name_label("ENDELSE_",location+1);
+                branch_end_else_instruction->address[2].value = location+1;
 
 
                 //Create holder label  end iftrue instruction
@@ -352,8 +354,8 @@ static address generate_statement( syntax_t_node* branch )
             label_instruction->operation = LABEL;
             //This is the label start while
             label_instruction->address[0].type = LOCATION;
-            label_instruction->address[0].data = name_label("STARTWHILE_",location);
-            label_instruction->address[0].value= location;
+            label_instruction->address[0].data = name_label("STARTWHILE_",location+1);
+            label_instruction->address[0].value= location+1;
             //at the final instruction for this section, we can reference a jump if not equal 
             //to label_instruction->address[0]
             label_instruction->address[1].type = EMPTY;
@@ -395,8 +397,8 @@ static address generate_statement( syntax_t_node* branch )
 
             //here the finish of the while body 
             //instruction->address[2] is set here to the finish of the while
-            instruction->address[2].data = name_label("ENDWHILE_",location);
-            instruction->address[2].value = location;
+            instruction->address[2].data = name_label("ENDWHILE_",location+1);
+            instruction->address[2].value = location+1;
             
             quadruple* end_while_label_instruction = malloc(sizeof(quadruple));
             end_while_label_instruction->operation = LABEL;
@@ -459,7 +461,6 @@ static address generate_statement( syntax_t_node* branch )
             //They are used by the program
             break;
         case FUNCT_SK:
-            
             scope = branch->attr.content;
 
             if(strcmp(scope, "main")==0){
@@ -467,16 +468,16 @@ static address generate_statement( syntax_t_node* branch )
                 start.address[0].type = EMPTY;
                 start.address[1].type = EMPTY;
                 start.address[2].type = LOCATION;
-                start.address[2].value = location;
-                start.address[2].data = name_label(branch->attr.content,location);
+                start.address[2].value = location+1;
+                start.address[2].data = name_label(branch->attr.content,location+1);
                 hash_insert(branch->attr.content, &(start.address[2]));
             }
 
             
             instruction->operation= LABEL;
             instruction->address[0].type = LOCATION;
-            instruction->address[0].data = name_label(branch->attr.content,location);
-            instruction->address[0].value= location;
+            instruction->address[0].data = name_label(branch->attr.content,location+1);
+            instruction->address[0].value= location+1;
             hash_insert(branch->attr.content, &(instruction->address[0]));
             instruction->address[1].type = EMPTY;
             instruction->address[2].type = EMPTY;
@@ -508,6 +509,9 @@ static address generate_statement( syntax_t_node* branch )
 
         case CALL_SK:
             uint param_count = 0;
+
+            // maybe in the future, the first thing will be to push the LINK REGISTER TO THE STACK,
+            //after the pops ?
             //if not a function without params
             if(branch->child[0]!=NULL)
             {
@@ -648,7 +652,7 @@ void print_address(address addr) {
 }
 
 void print_quadruple(quadruple* quad) {
-    printf("%u::", quad->location);
+    printf("%u::\t", quad->location);
     printf("%s", operation_strings[quad->operation - LOAD_VAR]);
     for (int i = 0; i < 3; ++i) {
             
@@ -670,6 +674,7 @@ void print_quadruple_linked_list(quadruple init) {
 }
 
 void init_generation(syntax_t_node *  root){
+    
     init_hash_table();
     generate(root);
 }
