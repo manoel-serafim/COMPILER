@@ -14,6 +14,7 @@ typedef enum {
     PUSH = 262;                    /*[0]reg or data to push to stack*/
     POP = 263;                     /*[0]dest to pop to*/
     BRANCH_AND_LINK = 264;         /*[2]inst_addr*/
+    STORE = 265,                   /*[0] dest reg with addr; [2] addr with content*/ // translate to STRREG|WORD|DATA
 
 
     PLUS_ALOP = 266,               /* PLUS_ALOP  [0]receivesresult*/

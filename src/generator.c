@@ -149,7 +149,7 @@ static quadruple* generate_expression(syntax_t_node* branch)
             vect_loader->address[2] = NULL;
             vect_loader->operation = LOAD_VECT;
 
-            
+            //get the addr of the referenced vector [base] + [offset]
             add_quadruple(vect_loader);
 
             free_register(vect_loader->address[1].value);
@@ -356,7 +356,31 @@ static address generate_statement( syntax_t_node* branch )
             break;
         case ASSIGN_SK:
 
+            //generate the first part and get addr of the register
+            //for VET or for VAR
+            generate(branch->child[0]);
+            //holder has the addr for the reg
+
+            //Now, I know that I have to store the content loaded to reg
+            
+            // this holds the addr of the variable
+            instruction->address[0] = holder;
+            
+
+            //this is the content to be assigned, to do that, generate it
             generate(branch->child[1]);
+            //register that holds the data or a immediate that holds the const or the return from a call
+            instruction->address[2] = holder;
+            
+            instruction->address[1] = NULL;
+            // store the content of holder into the address inside the reg [0]
+            instruction->operation = STORE;
+
+            add_quadruple(instruction);
+
+            if(instruction->address[0].type=REGISTER){
+                free_register(instruction->address[0].value);
+            }
 
             break;
         case VAR_SK:

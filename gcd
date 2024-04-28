@@ -19,9 +19,12 @@ void main(void)
 	int x; int y; int z;
 	int gcd;
 	int x; /* NOT UNIQUE VARIABLE STATEMENT*/
+	int vect[1];
+	vect[0]=3;
 	x= input();
 	b=x; /* EXPRESSION WITH NOT VALID VAR*/
 	/* IF A VAR B IS IN A SCOPE ABOVE IT DOES NOT CATCH IT*/
+	
 	
 	funct(z); /*CALL STATEMENT TO NON EXISTING FUNCTION */
 	x=2;
