@@ -44,3 +44,7 @@ bin/cmc path/to/source.cminus
 ```
 
 Replace `path/to/source.cminus` with the actual path to your C Minus source file.
+
+## diagrams
+<!--![Diagram Image Link](./diagrams/activity_diagram.puml)-->
+<!--![Diagram Image Link](./diagrams/block_diagram.puml)-->
