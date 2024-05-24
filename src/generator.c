@@ -412,31 +412,48 @@ static address generate_statement( syntax_t_node* branch )
             //Has yo return something?
             if(branch->child[0]!=NULL){
                 generate(branch->child[0]);
+                
+                //First pop the Link from stack
+                // Then push the data to be returned into the stack
+                // Then branch to the popped
 
-
-                //has to move all the data to a register;
-                instruction->operation = MOVE;
+                //GET LR;
+                instruction->operation = POP;
                 instruction->address[0].type= REGISTER;
                 instruction->address[0].value=reserve_register();
                 instruction->address[1].type = EMPTY;
-                instruction->address[2]= holder;
-
+                instruction->address[2].type = EMPTY;
                 add_quadruple(instruction);
 
-                holder = instruction->address[0];
+                quadruple* push_return_value = malloc(sizeof(quadruple));
+                push_return_value->operation = PUSH; 
+                push_return_value->address[0]=holder;
+                push_return_value->address[1].type = EMPTY;
+                push_return_value->address[2].type = EMPTY;
+                add_quadruple(push_return_value);
+
+                quadruple* branch_link_reg = malloc(sizeof(quadruple));
+                branch_link_reg->operation = BRANCH;
+                branch_link_reg->address[0].type = EMPTY;
+                branch_link_reg->address[1].type = EMPTY;
+                branch_link_reg->address[2].type = REGISTER;
+                branch_link_reg->address[2].value = instruction->address[0].value;
+                add_quadruple(branch_link_reg);
+                
             }
             break;
         case ASSIGN_SK:
 
             //generate the first part and get addr of the register
             //for VET or for VAR
-            generate(branch->child[0]);
+            generate(branch->child[0]);// NEED AN ADDRESS NOT THE CONTENT TO GET THE ADDR, GET THE HOLDER.addr[2,1]
             //holder has the addr for the reg
 
             //Now, I know that I have to store the content loaded to reg
             
             // this holds the addr of the variable
             instruction->address[0] = holder;
+            instruction->address[1].type = EMPTY;
             
 
             //this is the content to be assigned, to do that, generate it
@@ -444,7 +461,7 @@ static address generate_statement( syntax_t_node* branch )
             //register that holds the data or a immediate that holds the const or the return from a call
             instruction->address[2] = holder;
             
-            instruction->address[1].type = EMPTY;
+            
             // store the content of holder into the address inside the reg [0]
             instruction->operation = STORE;
 
@@ -559,8 +576,17 @@ static address generate_statement( syntax_t_node* branch )
             instruction->address[1].type = EMPTY;
             instruction->address[2]= *(hash_find(branch->attr.content));
             
-
             add_quadruple(instruction);
+
+            quadruple* pop_ret = malloc(sizeof(quadruple));
+            pop_ret->operation = POP;
+            pop_ret->address[0].type= REGISTER;
+            pop_ret->address[0].value=reserve_register();
+            pop_ret->address[1].type = EMPTY;
+            pop_ret->address[2].type = EMPTY;
+            add_quadruple(pop_ret);
+
+            holder = pop_ret->address[0];
 
             break;
 
@@ -667,7 +693,7 @@ void print_quadruple(quadruple* quad) {
 void print_quadruple_linked_list(quadruple init) {
     quadruple* current = &init;
 
-    while (current != NULL) {
+    while (current->next != NULL) {
         print_quadruple(current);
         current = current->next;
     }
