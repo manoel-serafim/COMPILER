@@ -84,8 +84,18 @@ uint location = 0;
 
 
 
+/*
+    0x00: 1000
+    0x04: 0000 
+    0x08: 0000
+    0x0c: 0000
+    0x10: 0000
+    0x14: 0110 
+    0x18: 0000
+    0x1c: 0000
 
-uint32_t register_status = 0x80060000;
+*/ 
+uint32_t register_status = 0x80000600;
 #define SET_BIT(num, pos) ((num) |= (1u << (pos)))
 #define RESET_BIT(num, pos) ((num) &= ~(1u << (pos)))
 
@@ -144,10 +154,10 @@ static quadruple* generate_expression(syntax_t_node* branch)
             instruction->operation = branch->attr.op;
 
             //if one of the registers of operand where used, now we can free them
-            if(instruction->address[1].type = REGISTER){
+            if(instruction->address[1].type == REGISTER){
                 free_register(instruction->address[1].value);
             }
-            if(instruction->address[2].type = REGISTER){
+            if(instruction->address[2].type == REGISTER){
                 free_register(instruction->address[2].value);
             }
 
@@ -276,7 +286,7 @@ static address generate_statement( syntax_t_node* branch )
             //instruction->address[2].value
 
             //instruction that will branch to the else or to the finish if e1 is false
-            instruction->operation = BRANCH_IF_NOT_EQUAL;
+            instruction->operation = BRANCH_IF_NOT_TRUE;
 
             //no use
             instruction->address[0].type = EMPTY;
@@ -367,7 +377,7 @@ static address generate_statement( syntax_t_node* branch )
             generate(branch->child[0]);
             //see is condition is not met
             //BNE ENDWHILE
-            instruction->operation = BRANCH_IF_NOT_EQUAL;
+            instruction->operation = BRANCH_IF_NOT_TRUE;
             instruction->address[0].type = EMPTY;
             instruction->address[1]= holder;
             instruction->address[2].type = LOCATION;
@@ -528,7 +538,7 @@ static address generate_statement( syntax_t_node* branch )
             uint param_count = 0;
 
             // maybe in the future, the first thing will be to push the LINK REGISTER TO THE STACK,
-            //after the pops ?
+            //before the pops ?
             //if not a function without params
             if(branch->child[0]!=NULL)
             {
@@ -634,7 +644,7 @@ quadruple* generate(syntax_t_node* syntax_root){
 const char* operation_strings[] = {
     "LOAD_VAR",
     "LOAD_VECT",
-    "BRANCH_IF_NOT_EQUAL",
+    "BRANCH_IF_NOT_TRUE",
     "BRANCH",
     "LABEL",
     "MOVE",
