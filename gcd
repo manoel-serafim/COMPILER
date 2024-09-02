@@ -13,7 +13,9 @@ void main(void)
 	
 	int x; int y; int z;
 	int vect[1];
-	vect[0]=3;
+
+	vect[1]=2;
+	vect[0]=3 - vect[1];
 	x= input();
 	
 	x=2;

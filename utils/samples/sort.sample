@@ -4,6 +4,7 @@ int x[10];
 
 int minloc ( int a[], int low, int high )
 {  int i; int x; int k;
+i=7;
  k = low;
  x = a[low];
  i = low + 1;
@@ -31,7 +32,7 @@ void sort ( int a[], int low, int high)
 
 void main(void)
 { int i;
- i = 0;
+ i = 4;
  while(i < 10)
    { x[1] = input();
     i = i + 1; }

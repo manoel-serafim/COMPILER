@@ -126,6 +126,16 @@ void add_quadruple(quadruple* inst){
 
 }
 
+
+
+const int inverse_relation[] = {
+    NOTEQ_REL,
+    EQ_REL,
+    GREAT_REL,
+    LESS_REL,
+    LESSEQ_REL,
+    GREATEQ_REL,
+};
 static quadruple* generate_expression(syntax_t_node* branch)
 {
 
@@ -139,19 +149,61 @@ static quadruple* generate_expression(syntax_t_node* branch)
             //generate the code needed for the execution of the left operand
             generate(branch->child[0]);
             // glob var_ addr
-            instruction->address[1] = holder;
+            
+            if(holder.type == IMMEDIATE)
+            {
+                quadruple* mvi1 = malloc(sizeof(quadruple));
+                mvi1->operation = LOAD_IMMEDIATE;
+                mvi1->address[0].type = REGISTER;
+                mvi1->address[0].value = reserve_register();
+                mvi1->address[1].type = EMPTY;
+                mvi1->address[2] = holder;
 
+                add_quadruple(mvi1);
+                holder = mvi1->address[0];
+            }
+
+            instruction->address[1] = holder;
             //the address for the current 
             //generate the code needed for the execution of the right operand
             generate(branch->child[1]);
+
+            if(holder.type == IMMEDIATE)
+            {
+                quadruple* mvi2 = malloc(sizeof(quadruple));
+                mvi2->operation = LOAD_IMMEDIATE;
+                mvi2->address[0].type = REGISTER;
+                mvi2->address[0].value = reserve_register();
+                mvi2->address[1].type = EMPTY;
+                mvi2->address[2] = holder;
+
+                add_quadruple(mvi2);
+                holder = mvi2->address[0];
+            }
+
             instruction->address[2] = holder;
 
             //now we can write the quadruple back inside of the quadruple list
             //dest is a temporary register 
-            instruction->address[0].value = reserve_register();
-            instruction->address[0].type = REGISTER;
-            //(branch.attr.op, dest, r2, r3)
-            instruction->operation = branch->attr.op;
+            
+            
+            if( branch->attr.op >= EQ_REL && branch->attr.op <= LESS_REL)
+            {
+                instruction->operation = inverse_relation[branch->attr.op-EQ_REL];
+                instruction->address[0].type = EMPTY;
+            }
+            else
+            {
+                instruction->address[0].value = reserve_register();
+                instruction->address[0].type = REGISTER;
+                //(branch.attr.op, dest, r2, r3)
+                instruction->operation = branch->attr.op;
+            }
+
+
+
+            
+            
 
             //if one of the registers of operand where used, now we can free them
             if(instruction->address[1].type == REGISTER){
@@ -286,7 +338,7 @@ static address generate_statement( syntax_t_node* branch )
             //instruction->address[2].value
 
             //instruction that will branch to the else or to the finish if e1 is false
-            instruction->operation = BRANCH_IF_NOT_TRUE;
+            instruction->operation = BRANCH_IF;
 
             //no use
             instruction->address[0].type = EMPTY;
@@ -377,7 +429,7 @@ static address generate_statement( syntax_t_node* branch )
             generate(branch->child[0]);
             //see is condition is not met
             //BNE ENDWHILE
-            instruction->operation = BRANCH_IF_NOT_TRUE;
+            instruction->operation = BRANCH_IF;
             instruction->address[0].type = EMPTY;
             instruction->address[1]= holder;
             instruction->address[2].type = LOCATION;
@@ -426,14 +478,11 @@ static address generate_statement( syntax_t_node* branch )
                 //First pop the Link from stack
                 // Then push the data to be returned into the stack
                 // Then branch to the popped
+                quadruple* add_stack = malloc(sizeof(quadruple));
 
-                //GET LR;
-                instruction->operation = POP;
-                instruction->address[0].type= REGISTER;
-                instruction->address[0].value=reserve_register();
-                instruction->address[1].type = EMPTY;
-                instruction->address[2].type = EMPTY;
-                add_quadruple(instruction);
+                add_stack->operation = ADD;
+                add_stack->address[0].type = REGISTER;
+                add_stack->address[0].value = reserve_register();
 
                 quadruple* push_return_value = malloc(sizeof(quadruple));
                 push_return_value->operation = PUSH; 
@@ -442,13 +491,12 @@ static address generate_statement( syntax_t_node* branch )
                 push_return_value->address[2].type = EMPTY;
                 add_quadruple(push_return_value);
 
-                quadruple* branch_link_reg = malloc(sizeof(quadruple));
-                branch_link_reg->operation = BRANCH;
-                branch_link_reg->address[0].type = EMPTY;
-                branch_link_reg->address[1].type = EMPTY;
-                branch_link_reg->address[2].type = REGISTER;
-                branch_link_reg->address[2].value = instruction->address[0].value;
-                add_quadruple(branch_link_reg);
+                //GET LR;
+                instruction->operation = RET;
+                instruction->address[0].type= EMPTY;
+                instruction->address[1].type = EMPTY;
+                instruction->address[2].type = EMPTY;
+                add_quadruple(instruction);
                 
             }
             break;
@@ -456,22 +504,34 @@ static address generate_statement( syntax_t_node* branch )
 
             //generate the first part and get addr of the register
             //for VET or for VAR
-            generate(branch->child[0]);// NEED AN ADDRESS NOT THE CONTENT TO GET THE ADDR, GET THE HOLDER.addr[2,1]
+            //generate(branch->child[0]);// NEED AN ADDRESS NOT THE CONTENT TO GET THE ADDR, GET THE HOLDER.addr[2,1]
             //holder has the addr for the reg
 
             //Now, I know that I have to store the content loaded to reg
             
             // this holds the addr of the variable
-            instruction->address[0] = holder;
-            instruction->address[1].type = EMPTY;
+            instruction->address[1].type = STR;
+            instruction->address[1].data = scope;
+            instruction->address[2].type = STR;
+            instruction->address[2].data = branch->child[0]->attr.content;
             
 
             //this is the content to be assigned, to do that, generate it
             generate(branch->child[1]);
             //register that holds the data or a immediate that holds the const or the return from a call
-            instruction->address[2] = holder;
             
-            
+            if(holder.type == IMMEDIATE){
+                quadruple* mvi = malloc(sizeof(quadruple));
+                mvi->operation = LOAD_IMMEDIATE;
+                mvi->address[0].type = REGISTER;
+                mvi->address[0].value = reserve_register();
+                mvi->address[1].type = EMPTY;
+                mvi->address[2] = holder;
+
+                add_quadruple(mvi);
+                holder = mvi->address[0];
+            }
+            instruction->address[0] = holder;
             // store the content of holder into the address inside the reg [0]
             instruction->operation = STORE;
 
@@ -511,7 +571,10 @@ static address generate_statement( syntax_t_node* branch )
             add_quadruple(instruction);
             
             //params gen
-            generate(branch->child[1]);
+            if(branch->child[1] != NULL){
+                generate_statement(branch->child[1]);
+            }
+            
             //function body gen
             generate(branch->child[2]);
 
@@ -602,6 +665,11 @@ static address generate_statement( syntax_t_node* branch )
 
         case PARAM_SK: 
         case VECT_PARAM_SK:
+            if(branch->sibling != NULL)
+            {
+                generate_statement(branch->sibling);
+            }
+            
             // POP all the content that was pushed into the stack
             //generate a POP instruction for each that is here;
             instruction->operation = POP;
@@ -611,6 +679,19 @@ static address generate_statement( syntax_t_node* branch )
             instruction->address[2].type = EMPTY;
             
             add_quadruple(instruction);
+
+
+            quadruple* load_var_poped = malloc(sizeof(quadruple));
+            load_var_poped->operation = STORE;
+            load_var_poped->address[0].type = REGISTER;
+            load_var_poped->address[0].value = instruction->address[0].value;
+            load_var_poped->address[1].type = STR;
+            load_var_poped->address[1].data = scope;
+            load_var_poped->address[2].type = STR;
+            load_var_poped->address[2].data = branch->attr.content;
+            
+            add_quadruple(load_var_poped);
+
             break;
     }
 
@@ -644,7 +725,7 @@ quadruple* generate(syntax_t_node* syntax_root){
 const char* operation_strings[] = {
     "LOAD_VAR",
     "LOAD_VECT",
-    "BRANCH_IF_NOT_TRUE",
+    "BRANCH_IF",
     "BRANCH",
     "LABEL",
     "MOVE",
@@ -661,7 +742,9 @@ const char* operation_strings[] = {
     "LESSEQ_RELOP",
     "GREATEQ_RELOP",
     "GREAT_RELOP",
-    "LESS_RELOP"
+    "LESS_RELOP",
+    "RET",
+    "LOAD_IMMEDIATE"
 };
 
 void print_address(address addr) {

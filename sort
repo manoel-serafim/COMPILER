@@ -10,6 +10,7 @@ int gcd (int u, int v)
 
 void main(void)
 {	int x; int y;
+i=23;
 	x = input(); y = input();
 	output(gcd(x,y));
 }

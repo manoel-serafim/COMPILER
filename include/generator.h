@@ -7,7 +7,7 @@ typedef enum {LOCATION,STR,REGISTER,IMMEDIATE,EMPTY} address_type;
 typedef enum {
     LOAD_VAR = 256,                /*[0]=reg_addr|[1]=scope|[2]name*/ 
     LOAD_VECT = 257,               /*[0]=reg_addr|[1]=add_result_sizeaddr|[2]NULL*/      
-    BRANCH_IF_NOT_TRUE = 258,     /*[0]=NULL|[1]=condition|[2]inst_addr*/
+    BRANCH_IF = 258,     /*[0]=NULL|[1]=condition|[2]inst_addr*/
     BRANCH = 259,                  /*[0]=NULL|[1]=NULL|[2]inst_addr*/
     LABEL = 260,                   /*[0]id|[1]NULL|[2]NULL*/
     MOVE = 261,                    /*[0]dest[1]NULL[2]data to ret*/
@@ -24,7 +24,9 @@ typedef enum {
     LESSEQ_REL= 272,            /* LESSEQ_RELOP  */
     GREATEQ_REL = 273,           /* GREATEQ_RELOP  */
     GREAT_REL = 274,             /* GREAT_RELOP  */
-    LESS_REL = 275              /* LESS_RELOP  */  
+    LESS_REL = 275,              /* LESS_RELOP  */ 
+    RET = 276, /*RETURN*/ //ret
+    LOAD_IMMEDIATE = 277, //li
 } code; 
 
 typedef struct{
