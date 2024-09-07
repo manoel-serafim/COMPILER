@@ -27,7 +27,8 @@ typedef enum {
     LESS_REL = 275,              /* LESS_RELOP  */ 
     RET = 276, /*RETURN*/ //ret
     LOAD_IMMEDIATE = 277, //li
-    ADDI = 278
+    ADDI = 278,
+    GLOB_MAIN = 279
 } code; 
 
 typedef struct{

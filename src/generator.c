@@ -651,7 +651,7 @@ static address generate_statement( syntax_t_node* branch )
             scope = branch->attr.content;
 
             if(strcmp(scope, "main")==0){
-                start.operation = BRANCH;
+                start.operation = GLOB_MAIN;
                 start.address[0].type = EMPTY;
                 start.address[1].type = EMPTY;
                 start.address[2].type = LOCATION;
@@ -725,6 +725,44 @@ static address generate_statement( syntax_t_node* branch )
             //function body gen
             generate(branch->child[2]);
 
+            if( (*(branch->child[0])).has.exp.type == VOID_T )
+            {
+                quadruple* mv_sp_fp_void = malloc(sizeof(quadruple));
+                mv_sp_fp_void->operation = MOVE; 
+                mv_sp_fp_void->address[0].type = REGISTER;
+                mv_sp_fp_void->address[0].value=2;
+                mv_sp_fp_void->address[1].type = REGISTER;
+                mv_sp_fp_void->address[1].value=8;
+                mv_sp_fp_void->address[2].type = EMPTY;
+                add_quadruple(mv_sp_fp_void);
+
+                quadruple* pop_fp_void = malloc(sizeof(quadruple));
+                pop_fp_void->operation = POP; 
+                pop_fp_void->address[0].type = REGISTER;
+                pop_fp_void->address[0].value=8;
+                pop_fp_void->address[1].type = EMPTY;
+                pop_fp_void->address[2].type = EMPTY;
+                add_quadruple(pop_fp_void);
+                 
+                quadruple* pop_ra_void = malloc(sizeof(quadruple));
+                pop_ra_void->operation = POP; 
+                pop_ra_void->address[0].type = REGISTER;
+                pop_ra_void->address[0].value=1;
+                pop_ra_void->address[1].type = EMPTY;
+                pop_ra_void->address[2].type = EMPTY;
+                add_quadruple(pop_ra_void);
+                
+
+                //GET LR;
+                quadruple* ret = malloc(sizeof(quadruple));
+                ret->operation = RET;
+                ret->address[0].type= EMPTY;
+                ret->address[1].type = EMPTY;
+                ret->address[2].type = EMPTY;
+                add_quadruple(ret);
+            }
+
+
             add_sp_localvars->address[2].value = (int)-(local_var_count);
             local_var_count = 0;
             clean_hash_loc_var_table();
@@ -774,7 +812,7 @@ static address generate_statement( syntax_t_node* branch )
                     quadruple* parameter_instruction = malloc(sizeof(quadruple));
                     parameter_instruction->operation = MOVE; 
                     parameter_instruction->address[0].type=REGISTER;
-                    parameter_instruction->address[0].value = 10+parameter_c++;
+                    parameter_instruction->address[0].value = 10+param_count-1;
                     parameter_instruction->address[1]= holder;
                     parameter_instruction->address[2].type = EMPTY;
 
@@ -898,7 +936,8 @@ const char* operation_strings[] = {
     "LESS_RELOP",
     "RET",
     "LOAD_IMMEDIATE",
-    "ADDI"
+    "ADDI",
+    "GLOB_MAIN"
 };
 
 void print_address(address addr) {
@@ -940,7 +979,7 @@ void print_quadruple(quadruple* quad) {
 void print_quadruple_linked_list(quadruple init) {
     quadruple* current = &init;
 
-    while (current->next != NULL) {
+    while (current != NULL) {
         print_quadruple(current);
         current = current->next;
     }

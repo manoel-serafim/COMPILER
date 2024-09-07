@@ -7,7 +7,7 @@ void assemble(quadruple * head)
     quadruple* instruction_pointer = (quadruple *) head;
 
     // Open file for writing
-    FILE *file = fopen("assembly.asm", "w");
+    FILE *file = fopen("app.s", "w");
     if (file == NULL) {
         perror("Error opening file");
         return;
@@ -156,20 +156,14 @@ void assemble(quadruple * head)
                 break;
 
             case MULT:
-                // Multiply using jal __mul; assumes __mul function
-                fprintf(file, "mv a0, x%d\n", instruction_pointer->address[1].value);
-                fprintf(file, "mv a1, x%d\n", instruction_pointer->address[2].value);
-                fprintf(file, "jal __mulsi3\n");
-                fprintf(file, "mv x%d, a0\n", instruction_pointer->address[0].value);
+                
+                fprintf(file, "mul x%d, x%d, x%d\n", instruction_pointer->address[0].value, instruction_pointer->address[1].value, instruction_pointer->address[2].value);
                 break;
 
             case DIV:
                 // Divide using jal __div; assumes __div function
                 // mv dest, a0 
-                fprintf(file, "mv a0, x%d\n", instruction_pointer->address[1].value);
-                fprintf(file, "mv a1, x%d\n", instruction_pointer->address[2].value);
-                fprintf(file, "jal __divsi3\n");
-                fprintf(file, "mv x%d, a0\n", instruction_pointer->address[0].value);
+                fprintf(file, "div x%d, x%d, x%d\n", instruction_pointer->address[0].value, instruction_pointer->address[1].value, instruction_pointer->address[2].value);
 
                 break;
 
@@ -183,6 +177,11 @@ void assemble(quadruple * head)
                 fprintf(file, "li x%d, %d\n", 
                     instruction_pointer->address[0].value, 
                     instruction_pointer->address[2].value);
+                break;
+            case GLOB_MAIN:
+                // li $reg, immediate
+                fprintf(file, ".globl %s\n", 
+                    instruction_pointer->address[2].data);
                 break;
         }
 
