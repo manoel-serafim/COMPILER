@@ -7,7 +7,7 @@ SAMPLE_DIR= utils/samples
 
 all: bin/cmc
 
-bin/cmc: main.c $(BUILD_DIR)/lexer.o $(BUILD_DIR)/buffer.o $(BUILD_DIR)/parser.tab.o $(BUILD_DIR)/parser.o $(BUILD_DIR)/contextualizer.o $(BUILD_DIR)/generator.o
+bin/cmc: main.c $(BUILD_DIR)/lexer.o $(BUILD_DIR)/buffer.o $(BUILD_DIR)/parser.tab.o $(BUILD_DIR)/parser.o $(BUILD_DIR)/contextualizer.o $(BUILD_DIR)/generator.o $(BUILD_DIR)/assembler.o
 	$(CC) -g -o $@ $^
 
 $(BUILD_DIR)/buffer.o: $(SRC_DIR)/buffer.c
@@ -26,6 +26,9 @@ $(BUILD_DIR)/contextualizer.o: $(SRC_DIR)/contextualizer.c
 	$(CC) -c $< -o $@ $(CFLAGS)
 
 $(BUILD_DIR)/generator.o: $(SRC_DIR)/generator.c
+	$(CC) -c $< -o $@ $(CFLAGS)
+
+$(BUILD_DIR)/assembler.o: $(SRC_DIR)/assembler.c
 	$(CC) -c $< -o $@ $(CFLAGS)
 
 

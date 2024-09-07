@@ -81,21 +81,22 @@ quadruple* head = &start;
 address holder;
 char * scope = "global";
 uint location = 0;
+uint parameter_c = 0;
 
 
 
 /*
-    0x00: 1000
+    0x00: 1110
     0x04: 0000 
-    0x08: 0000
-    0x0c: 0000
-    0x10: 0000
-    0x14: 0110 
+    0x08: 1011
+    0x0c: 1111
+    0x10: 1100
+    0x14: 0000 
     0x18: 0000
     0x1c: 0000
 
 */ 
-uint32_t register_status = 0x80000600;
+uint32_t register_status = 0xe0bfc000;
 #define SET_BIT(num, pos) ((num) |= (1u << (pos)))
 #define RESET_BIT(num, pos) ((num) &= ~(1u << (pos)))
 
@@ -478,18 +479,34 @@ static address generate_statement( syntax_t_node* branch )
                 //First pop the Link from stack
                 // Then push the data to be returned into the stack
                 // Then branch to the popped
-                quadruple* add_stack = malloc(sizeof(quadruple));
+                
+                quadruple* move_sp_fp = malloc(sizeof(quadruple));
+                move_sp_fp->operation = MOVE; 
+                move_sp_fp->address[0].type = REGISTER;
+                move_sp_fp->address[0].value=2;
+                move_sp_fp->address[1].type = REGISTER;
+                move_sp_fp->address[1].value=8;
+                move_sp_fp->address[2].type = EMPTY;
+                add_quadruple(move_sp_fp);
 
-                add_stack->operation = ADD;
-                add_stack->address[0].type = REGISTER;
-                add_stack->address[0].value = reserve_register();
+
+                quadruple* pop_ra = malloc(sizeof(quadruple));
+                pop_ra->operation = POP; 
+                pop_ra->address[0].type = REGISTER;
+                pop_ra->address[0].value=1;
+                pop_ra->address[1].type = EMPTY;
+                pop_ra->address[2].type = EMPTY;
+                add_quadruple(pop_ra);
 
                 quadruple* push_return_value = malloc(sizeof(quadruple));
-                push_return_value->operation = PUSH; 
-                push_return_value->address[0]=holder;
-                push_return_value->address[1].type = EMPTY;
+                push_return_value->operation = MOVE; 
+                push_return_value->address[0].type = REGISTER;
+                push_return_value->address[0].value = 10;
+                push_return_value->address[1] = holder;
                 push_return_value->address[2].type = EMPTY;
                 add_quadruple(push_return_value);
+
+                
 
                 //GET LR;
                 instruction->operation = RET;
@@ -571,34 +588,58 @@ static address generate_statement( syntax_t_node* branch )
             add_quadruple(instruction);
             
             //params gen
-            if(branch->child[1] != NULL){
-                generate_statement(branch->child[1]);
-            }
+            
+            
+            //prologue
+
+            quadruple* push_ra = malloc(sizeof(quadruple));
+            push_ra->operation= PUSH;
+            push_ra->address[0].type = REGISTER;
+            push_ra->address[0].value = 1;
+            push_ra->address[1].type = EMPTY;
+            push_ra->address[2].type = EMPTY;
+
+            add_quadruple(push_ra);
+
+            quadruple* push_fp = malloc(sizeof(quadruple));
+            push_fp->operation= PUSH;
+            push_fp->address[0].type = REGISTER;
+            push_fp->address[0].value = 8;
+            push_fp->address[1].type = EMPTY;
+            push_fp->address[2].type = EMPTY;
+
+            add_quadruple(push_fp);
+
+            quadruple* assign_fp_sp = malloc(sizeof(quadruple));
+            assign_fp_sp->operation= MOVE;
+            assign_fp_sp->address[0].type = REGISTER;
+            assign_fp_sp->address[0].value = 8;
+            assign_fp_sp->address[1].type = REGISTER;
+            assign_fp_sp->address[1].value = 2;
+            assign_fp_sp->address[2].type = EMPTY;
+
+            add_quadruple(assign_fp_sp);
+
+            generate(branch->child[1]);
+            parameter_c = 0;
             
             //function body gen
             generate(branch->child[2]);
 
             //should I add anything when finished?
             //need to branch to the link reg 14 is the lr
-            quadruple* jump_lr_instruction = malloc(sizeof(quadruple));
-            jump_lr_instruction->operation= MOVE;
-            jump_lr_instruction->address[0].type = REGISTER;
-            jump_lr_instruction->address[0].value = 15;
-            jump_lr_instruction->address[1].type = EMPTY;
-            jump_lr_instruction->address[0].type = REGISTER;
-            jump_lr_instruction->address[0].value = 14;
-
-            add_quadruple(jump_lr_instruction);
+            //epilogue
 
             //addquad HERE
             scope = "global";
 
             //clean all registers for reuse
-            register_status = 0x80060000;
+            register_status = 0xe0bfc000;
             break;
 
         case CALL_SK:
             uint param_count = 0;
+            parameter_c = 0;
 
             // maybe in the future, the first thing will be to push the LINK REGISTER TO THE STACK,
             //before the pops ?
@@ -628,9 +669,10 @@ static address generate_statement( syntax_t_node* branch )
                     //vect addr
                     //const
                     quadruple* parameter_instruction = malloc(sizeof(quadruple));
-                    parameter_instruction->operation = PUSH; 
-                    parameter_instruction->address[0]=holder;
-                    parameter_instruction->address[1].type = EMPTY;
+                    parameter_instruction->operation = MOVE; 
+                    parameter_instruction->address[0].type=REGISTER;
+                    parameter_instruction->address[0].value = 10+parameter_c++;
+                    parameter_instruction->address[1]= holder;
                     parameter_instruction->address[2].type = EMPTY;
 
                     add_quadruple(parameter_instruction);
@@ -652,10 +694,11 @@ static address generate_statement( syntax_t_node* branch )
             add_quadruple(instruction);
 
             quadruple* pop_ret = malloc(sizeof(quadruple));
-            pop_ret->operation = POP;
+            pop_ret->operation = MOVE;
             pop_ret->address[0].type= REGISTER;
             pop_ret->address[0].value=reserve_register();
-            pop_ret->address[1].type = EMPTY;
+            pop_ret->address[1].type = REGISTER;
+            pop_ret->address[1].value= 10;
             pop_ret->address[2].type = EMPTY;
             add_quadruple(pop_ret);
 
@@ -665,32 +708,18 @@ static address generate_statement( syntax_t_node* branch )
 
         case PARAM_SK: 
         case VECT_PARAM_SK:
-            if(branch->sibling != NULL)
-            {
-                generate_statement(branch->sibling);
-            }
             
-            // POP all the content that was pushed into the stack
-            //generate a POP instruction for each that is here;
-            instruction->operation = POP;
+            instruction->operation = STORE;
             instruction->address[0].type = REGISTER;
-            instruction->address[0].value = reserve_register();
-            instruction->address[1].type = EMPTY;
-            instruction->address[2].type = EMPTY;
+            instruction->address[0].value = 10+parameter_c++;
+            instruction->address[1].type = STR;
+            instruction->address[1].data = scope;
+            instruction->address[2].type = STR;
+            instruction->address[2].data = branch->attr.content;
+
             
             add_quadruple(instruction);
 
-
-            quadruple* load_var_poped = malloc(sizeof(quadruple));
-            load_var_poped->operation = STORE;
-            load_var_poped->address[0].type = REGISTER;
-            load_var_poped->address[0].value = instruction->address[0].value;
-            load_var_poped->address[1].type = STR;
-            load_var_poped->address[1].data = scope;
-            load_var_poped->address[2].type = STR;
-            load_var_poped->address[2].data = branch->attr.content;
-            
-            add_quadruple(load_var_poped);
 
             break;
     }

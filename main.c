@@ -2,6 +2,7 @@
 #include "include/parser.h"
 #include "include/contextualizer.h"
 #include "include/generator.h"
+#include "include/assembler.h"
 
 ParsingContext glob_context;
 
@@ -46,6 +47,8 @@ int main(int argc, char *argv[]) {
     //intermediate code generation
     init_generation(syntax_root);
     print_quadruple_linked_list(start);
+    
+    assemble(&start);
     
     //cleanup functions
     free(glob_context.p_token_rec);
