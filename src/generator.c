@@ -75,6 +75,58 @@ void free_hash_table(hash_entry *table) {
 
 
 
+typedef struct {
+    char str[128];  // The string (key)
+    unsigned int position;  // The position (value)
+} loc_var_hash_frame;
+
+// Hash table to store variables and their positions
+loc_var_hash_frame local_var_to_frame[256];
+unsigned int currentPosition = 0;  // Start position for frame pointer
+unsigned int local_var_to_frame_size = 0;
+uint32_t local_var_count= 0; 
+
+
+// Function to find the position of a string in the hash table
+int find_in__loc_var_hash_table(const char* str) {
+    for (unsigned int i = 0; i < local_var_to_frame_size; ++i) {
+        if (strcmp(local_var_to_frame[i].str, str) == 0) {
+            return local_var_to_frame[i].position;  // Return the position if found
+        }
+    }
+    return -1;  // Return -1 if not found
+}
+void clean_hash_loc_var_table() {
+    // Reset the hash table size and position counter
+    local_var_to_frame_size = 0;
+    currentPosition = 0;
+
+    // Optionally, clear the contents of the hash table entries
+    for (unsigned int i = 0; i < 256; ++i) {
+        memset(local_var_to_frame[i].str, 0, 128);  // Clear the string
+        local_var_to_frame[i].position = 0;  // Reset the position
+    }
+}
+
+// Function to allocate register and return position in the frame pointer
+unsigned int alloc_reg(const char* str) {
+    int pos = find_in__loc_var_hash_table(str);
+    if (pos != -1) {
+        return pos;  // Return the existing position if the string is already in the hash table
+    }
+
+    local_var_count+=4;
+
+    // If the string is not in the table, add it with the next position
+    strncpy(local_var_to_frame[local_var_to_frame_size].str, str, 128);
+    local_var_to_frame[local_var_to_frame_size].position = currentPosition;
+    currentPosition++;  // Increment the position for the next variable
+    local_var_to_frame_size++;    // Increase the size of the hash table
+
+    return currentPosition - 1;  // Return the newly assigned position
+}
+
+
 
 quadruple start;
 quadruple* head = &start;
@@ -221,11 +273,17 @@ static quadruple* generate_expression(syntax_t_node* branch)
             break;
 
         case ID_EK:
-            instruction->address[1].data = scope;
-            instruction->address[1].type = STR;
+            char* result_id = malloc(sizeof(char)*128);
+            snprintf(result_id, 128U, "%s_%s", scope, branch->attr.content);
+            uint32_t offset_id = alloc_reg(result_id);
 
-            instruction->address[2].data = branch->attr.content;
+
+            instruction->address[1].value = 8;
+            instruction->address[1].type = REGISTER;
+
+            instruction->address[2].data = result_id;
             instruction->address[2].type = STR;
+            instruction->address[2].value = offset_id;
 
             instruction->operation = LOAD_VAR;
             instruction->address[0].type = REGISTER;
@@ -247,11 +305,17 @@ static quadruple* generate_expression(syntax_t_node* branch)
             break;
 
         case VECT_ID_EK:
-            instruction->address[1].data = scope;
-            instruction->address[1].type = STR;
+            char* result_vec = malloc(sizeof(char)*128);
+            snprintf(result_vec, 128U, "%s_%s", scope, branch->attr.content);
+            uint32_t offset_vec = alloc_reg(result_vec);
 
-            instruction->address[2].data = branch->attr.content;
+
+            instruction->address[1].value = 8;
+            instruction->address[1].type = REGISTER;
+
+            instruction->address[2].data = result_vec;
             instruction->address[2].type = STR;
+            instruction->address[2].value = offset_vec;
 
             instruction->operation = LOAD_VAR;
             instruction->address[0].type = REGISTER;
@@ -356,7 +420,8 @@ static address generate_statement( syntax_t_node* branch )
 
             //check if there is an else body
             if(branch->child[2] == NULL){
-                instruction->address[2].data = name_label("ENDIF_", location+1);
+                instruction->address[2].data = malloc(sizeof(char)*128);
+                sprintf(instruction->address[2].data, ".L%d", location+1);
                 instruction->address[2].value = location+1;
 
                 //Create holder label instruction
@@ -380,7 +445,8 @@ static address generate_statement( syntax_t_node* branch )
                 add_quadruple(branch_end_else_instruction);
                 
                 //Here is the start of the else, if false the initial inst goes to here
-                instruction->address[2].data = name_label("STARTELSE_",location+1);
+                instruction->address[2].data = malloc(sizeof(char)*128);
+                sprintf(instruction->address[2].data, ".L%d", location+1);
                 instruction->address[2].value = location+1;
 
                 //will then use the location to define the end of the true
@@ -396,7 +462,8 @@ static address generate_statement( syntax_t_node* branch )
                 generate(branch->child[2]);
 
                 //in true code, will jump to a label at the final of the elseblock
-                branch_end_else_instruction->address[2].data = name_label("ENDELSE_",location+1);
+                branch_end_else_instruction->address[2].data = malloc(sizeof(char)*128);
+                sprintf(branch_end_else_instruction->address[2].data, ".L%d", location+1);
                 branch_end_else_instruction->address[2].value = location+1;
 
 
@@ -417,8 +484,10 @@ static address generate_statement( syntax_t_node* branch )
             label_instruction->operation = LABEL;
             //This is the label start while
             label_instruction->address[0].type = LOCATION;
-            label_instruction->address[0].data = name_label("STARTWHILE_",location+1);
-            label_instruction->address[0].value= location+1;
+            label_instruction->address[0].data = malloc(sizeof(char)*128);
+            sprintf(label_instruction->address[0].data, ".L%d", location+1);
+            label_instruction->address[0].value = location+1;
+            
             //at the final instruction for this section, we can reference a jump if not equal 
             //to label_instruction->address[0]
             label_instruction->address[1].type = EMPTY;
@@ -460,7 +529,8 @@ static address generate_statement( syntax_t_node* branch )
 
             //here the finish of the while body 
             //instruction->address[2] is set here to the finish of the while
-            instruction->address[2].data = name_label("ENDWHILE_",location+1);
+            instruction->address[2].data = malloc(sizeof(char)*128);
+            sprintf(instruction->address[2].data, ".L%d", location+1);
             instruction->address[2].value = location+1;
             
             quadruple* end_while_label_instruction = malloc(sizeof(quadruple));
@@ -489,7 +559,14 @@ static address generate_statement( syntax_t_node* branch )
                 move_sp_fp->address[2].type = EMPTY;
                 add_quadruple(move_sp_fp);
 
-
+                quadruple* pop_fp = malloc(sizeof(quadruple));
+                pop_fp->operation = POP; 
+                pop_fp->address[0].type = REGISTER;
+                pop_fp->address[0].value=8;
+                pop_fp->address[1].type = EMPTY;
+                pop_fp->address[2].type = EMPTY;
+                add_quadruple(pop_fp);
+                 
                 quadruple* pop_ra = malloc(sizeof(quadruple));
                 pop_ra->operation = POP; 
                 pop_ra->address[0].type = REGISTER;
@@ -497,6 +574,8 @@ static address generate_statement( syntax_t_node* branch )
                 pop_ra->address[1].type = EMPTY;
                 pop_ra->address[2].type = EMPTY;
                 add_quadruple(pop_ra);
+
+                
 
                 quadruple* push_return_value = malloc(sizeof(quadruple));
                 push_return_value->operation = MOVE; 
@@ -525,12 +604,16 @@ static address generate_statement( syntax_t_node* branch )
             //holder has the addr for the reg
 
             //Now, I know that I have to store the content loaded to reg
-            
+            char* result_as = malloc(sizeof(char)*128);
+            snprintf(result_as, 128U, "%s_%s", scope, branch->child[0]->attr.content);
+            uint32_t offset_as = alloc_reg(result_as);
+
             // this holds the addr of the variable
-            instruction->address[1].type = STR;
-            instruction->address[1].data = scope;
+            instruction->address[1].type = REGISTER;
+            instruction->address[1].value = 8;
             instruction->address[2].type = STR;
-            instruction->address[2].data = branch->child[0]->attr.content;
+            instruction->address[2].data = result_as;
+            instruction->address[2].value = offset_as;
             
 
             //this is the content to be assigned, to do that, generate it
@@ -573,14 +656,14 @@ static address generate_statement( syntax_t_node* branch )
                 start.address[1].type = EMPTY;
                 start.address[2].type = LOCATION;
                 start.address[2].value = location+1;
-                start.address[2].data = name_label(branch->attr.content,location+1);
+                start.address[2].data = strdup(branch->attr.content);
                 hash_insert(branch->attr.content, &(start.address[2]));
             }
 
             
             instruction->operation= LABEL;
             instruction->address[0].type = LOCATION;
-            instruction->address[0].data = name_label(branch->attr.content,location+1);
+            instruction->address[0].data = strdup(branch->attr.content);
             instruction->address[0].value= location+1;
             hash_insert(branch->attr.content, &(instruction->address[0]));
             instruction->address[1].type = EMPTY;
@@ -591,6 +674,7 @@ static address generate_statement( syntax_t_node* branch )
             
             
             //prologue
+
 
             quadruple* push_ra = malloc(sizeof(quadruple));
             push_ra->operation= PUSH;
@@ -617,14 +701,33 @@ static address generate_statement( syntax_t_node* branch )
             assign_fp_sp->address[1].type = REGISTER;
             assign_fp_sp->address[1].value = 2;
             assign_fp_sp->address[2].type = EMPTY;
-
             add_quadruple(assign_fp_sp);
+
+
+            
+            
+
+            quadruple* add_sp_localvars = malloc(sizeof(quadruple));
+            add_sp_localvars->operation= ADDI;
+            add_sp_localvars->address[0].type = REGISTER;
+            add_sp_localvars->address[0].value = 2;
+            add_sp_localvars->address[1].type = REGISTER;
+            add_sp_localvars->address[1].value = 2;
+            add_sp_localvars->address[2].type = IMMEDIATE;
+            add_quadruple(add_sp_localvars);
+
+
+            
 
             generate(branch->child[1]);
             parameter_c = 0;
             
             //function body gen
             generate(branch->child[2]);
+
+            add_sp_localvars->address[2].value = (int)-(local_var_count);
+            local_var_count = 0;
+            clean_hash_loc_var_table();
 
             //should I add anything when finished?
             //need to branch to the link reg 14 is the lr
@@ -689,7 +792,8 @@ static address generate_statement( syntax_t_node* branch )
             instruction->operation = BRANCH_AND_LINK;
             instruction->address[0].type = EMPTY;
             instruction->address[1].type = EMPTY;
-            instruction->address[2]= *(hash_find(branch->attr.content));
+            instruction->address[2].type = STR;
+            instruction->address[2].data= (*(hash_find(branch->attr.content))).data;
             
             add_quadruple(instruction);
 
@@ -708,18 +812,38 @@ static address generate_statement( syntax_t_node* branch )
 
         case PARAM_SK: 
         case VECT_PARAM_SK:
+
+
+            //I have the scope and the var name;
+            //now I need to concat the two of them,
+            //send this str to a function called alloc_reg
+            //If the str was already sent into this function, it will send the position
+            //the position is an uint that represents the position in the frame pointer,
+            //the position is incremented each time a new str is sent to alloc_reg
+            //a hash table is incremented with the key = the str sent to the alloc_reg, and the value = position;
+            //if the str sent to alloc_reg already is in the hash_table, alloc_reg returns the value, 
+            //if not, it inserts the str as a key and the position as a value 
+            char* result = malloc(sizeof(char)*128);
+            snprintf(result, 128U, "%s_%s", scope, branch->attr.content);
+            uint32_t offset = alloc_reg(result);
             
             instruction->operation = STORE;
             instruction->address[0].type = REGISTER;
             instruction->address[0].value = 10+parameter_c++;
-            instruction->address[1].type = STR;
-            instruction->address[1].data = scope;
+            instruction->address[1].type = REGISTER;
+            instruction->address[1].value = 8;
             instruction->address[2].type = STR;
-            instruction->address[2].data = branch->attr.content;
+            instruction->address[2].data = result;
+            instruction->address[2].value = offset;
 
             
-            add_quadruple(instruction);
 
+            add_quadruple(instruction);
+            //add to sp, for it not to interfere with this local var
+
+            //in epilogue, add a new counter variable with an add
+            //add an instruction that finishes being complete in the epilogue, add it even though not have value to add yet, this is local vars ref
+            //keep calc
 
             break;
     }
@@ -773,7 +897,8 @@ const char* operation_strings[] = {
     "GREAT_RELOP",
     "LESS_RELOP",
     "RET",
-    "LOAD_IMMEDIATE"
+    "LOAD_IMMEDIATE",
+    "ADDI"
 };
 
 void print_address(address addr) {

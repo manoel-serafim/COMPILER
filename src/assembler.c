@@ -1,10 +1,6 @@
 #include "assembler.h"
 
 
-uint offset_calc(char* scope, char* variable)
-{
-    return 1;
-}
 
 void assemble(quadruple * head)
 {
@@ -24,14 +20,16 @@ void assemble(quadruple * head)
         {
             case LOAD_VAR:
                 // lw $reg, offset(s0)
-                fprintf(file, "lw a%d, %d(s0)\n", 
-                    instruction_pointer->address[0].value, 9);
+                fprintf(file, "lw x%d, %d(x%d)\n", 
+                    instruction_pointer->address[0].value, 
+                    (instruction_pointer->address[2].value+1)*-4,
+                    instruction_pointer->address[1].value);
                     //offset_calc(instruction_pointer->address[1], instruction_pointer->address[2]));
                 break;
 
             case LOAD_VECT:
                 // lw $reg, offset(s0) with additional offset
-                fprintf(file, "lw a%d, %d(s0)\n", 
+                fprintf(file, "lw x%d, %d(s0)\n", 
                     instruction_pointer->address[0].value, 9);
                     //offset_calc(instruction_pointer->address[1], instruction_pointer->address[2]));
                 break;
@@ -44,48 +42,48 @@ void assemble(quadruple * head)
             case LESS_REL:
             {
                 // Handle conditional branch based on comparison
-                uint relative_loc = instruction_pointer->next->address[2].value;
+                char* relative_loc = instruction_pointer->next->address[2].data;
 
                 switch (instruction_pointer->operation)
                 {
                     case EQ_REL:
                         // beq $reg1, $reg2, immediate_location
-                        fprintf(file, "beq x%d, x%d, .L%d\n", 
+                        fprintf(file, "beq x%d, x%d, %s\n", 
                             instruction_pointer->address[1].value, 
                             instruction_pointer->address[2].value, 
                             relative_loc);
                         break;
                     case NOTEQ_REL:
                         // bne $reg1, $reg2, immediate_location
-                        fprintf(file, "bne x%d, x%d, .L%d\n", 
+                        fprintf(file, "bne x%d, x%d, %s\n", 
                             instruction_pointer->address[1].value, 
                             instruction_pointer->address[2].value, 
                             relative_loc);
                         break;
                     case LESSEQ_REL:
                     // ble $reg1, $reg2, immediate_location
-                        fprintf(file, "ble x%d, x%d, .L%d\n", 
+                        fprintf(file, "ble x%d, x%d, %s\n", 
                             instruction_pointer->address[1].value, 
                             instruction_pointer->address[2].value, 
                             relative_loc);
                         break;
                     case GREATEQ_REL:
                         // bge $reg1, $reg2, immediate_location
-                        fprintf(file, "bge x%d, x%d, .L%d\n", 
+                        fprintf(file, "bge x%d, x%d, %s\n", 
                             instruction_pointer->address[1].value, 
                             instruction_pointer->address[2].value, 
                             relative_loc);
                         break;
                     case GREAT_REL:
                         // bgt $reg1, $reg2, immediate_location
-                        fprintf(file, "bgt x%d, x%d, .L%d\n", 
+                        fprintf(file, "bgt x%d, x%d, %s\n", 
                             instruction_pointer->address[1].value, 
                             instruction_pointer->address[2].value, 
                             relative_loc);
                         break;
                     case LESS_REL:
                         // blt $reg1, $reg2, immediate_location
-                        fprintf(file, "blt x%d, x%d, .L%d\n", 
+                        fprintf(file, "blt x%d, x%d, %s\n", 
                             instruction_pointer->address[1].value, 
                             instruction_pointer->address[2].value, 
                             relative_loc);
@@ -97,12 +95,12 @@ void assemble(quadruple * head)
             
             case BRANCH:
                 // j <location>
-                fprintf(file, "j .L%d\n", instruction_pointer->address[2].value);
+                fprintf(file, "j %s\n", instruction_pointer->address[2].data);
                 break;
 
             case LABEL:
                 // Label marker (NOP or empty)
-                fprintf(file, ".L%d:\n", instruction_pointer->address[0].value);
+                fprintf(file, "%s:\n", instruction_pointer->address[0].data);
                 break;
 
             case MOVE:
@@ -115,25 +113,30 @@ void assemble(quadruple * head)
             case PUSH:
                 // addi sp, sp, -4; sw $reg, 0(sp)
                 fprintf(file, "addi x2, x2, -4\n");
-                fprintf(file, "sw x%d, x2\n", instruction_pointer->address[0].value);
+                fprintf(file, "sw x%d, (x2)\n", instruction_pointer->address[0].value);
                 break;
 
             case POP:
                 // lw $dest, 0(sp); addi sp, sp, 4
-                fprintf(file, "lw x%d, x2\n", instruction_pointer->address[0].value);
+                fprintf(file, "lw x%d, (x2)\n", instruction_pointer->address[0].value);
                 fprintf(file, "addi x2, x2, 4\n");
                 break;
 
             case BRANCH_AND_LINK:
                 // jal <location>
-                fprintf(file, "jal .L%d\n", instruction_pointer->address[2].value);
+                fprintf(file, "jal %s\n", instruction_pointer->address[2].data);
+                break;
+            
+            case ADDI:
+                fprintf(file, "addi x%d, x%d, %d\n", instruction_pointer->address[0].value, instruction_pointer->address[1].value, instruction_pointer->address[2].value);
                 break;
 
             case STORE:
                 // sw $reg, offset(s0)
-                fprintf(file, "sw x%d, %d(s0)\n", 
+                fprintf(file, "sw x%d, %d(x%d)\n", 
                     instruction_pointer->address[0].value, 
-                    instruction_pointer->address[2].value);
+                    (instruction_pointer->address[2].value+1)*-4,
+                    instruction_pointer->address[1].value);
                 break;
 
             case ADD:
@@ -163,8 +166,8 @@ void assemble(quadruple * head)
             case DIV:
                 // Divide using jal __div; assumes __div function
                 // mv dest, a0 
-                fprintf(file, "mv a0, %d\n", instruction_pointer->address[1].value);
-                fprintf(file, "mv a1, %d\n", instruction_pointer->address[2].value);
+                fprintf(file, "mv a0, x%d\n", instruction_pointer->address[1].value);
+                fprintf(file, "mv a1, x%d\n", instruction_pointer->address[2].value);
                 fprintf(file, "jal __divsi3\n");
                 fprintf(file, "mv x%d, a0\n", instruction_pointer->address[0].value);
 
