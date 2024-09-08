@@ -49,6 +49,11 @@ int main(int argc, char *argv[]) {
     print_quadruple_linked_list(start);
     
     assemble(&start);
+
+    //execute the binary to .elf binutils in order to link the code to the NUGGET_OS
+    char command[100];
+    snprintf(command, sizeof(command), "riscv64-unknown-elf-obj app.bin");
+    system(command);
     
     //cleanup functions
     free(glob_context.p_token_rec);

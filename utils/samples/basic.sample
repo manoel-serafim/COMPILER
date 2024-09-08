@@ -1,0 +1,34 @@
+
+
+int somar(int a, int b) {
+    return a + b;
+}
+
+int main(void) {
+    int x;
+    int y; 
+    int resultado;
+    
+    /* Atribuição */
+    x = input();
+    y = input();
+    
+    /* Chamada de função */
+    resultado = somar(x, y);
+    
+    /* Seleção (Condicional) */
+    if (resultado > 10) {
+        /* Repetição (Laço) */
+        int i;
+        i=0;
+        while( i < resultado ) {
+            /* Impressão de resultado */
+            output(i);
+            i=i+1;
+        }
+    } else {
+        output(resultado);
+    }
+    
+    return 0;
+}

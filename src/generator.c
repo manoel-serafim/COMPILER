@@ -156,6 +156,7 @@ uint32_t register_status = 0xe0bfc000;
 
 static inline int free_register(uint position){
     RESET_BIT(register_status, position);
+    register_status = register_status | 0xe0bfc000;
 }
 
 uint8_t reserve_register(){
@@ -347,7 +348,7 @@ static quadruple* generate_expression(syntax_t_node* branch)
             vect_loader->address[0].value = reserve_register();
             
             vect_loader->address[2].type = EMPTY;
-            vect_loader->operation = LOAD_VECT;
+            vect_loader->operation = LOAD_VAR;
 
             //get the addr of the referenced vector [base] + [offset]
             add_quadruple(vect_loader);
@@ -598,54 +599,141 @@ static address generate_statement( syntax_t_node* branch )
             break;
         case ASSIGN_SK:
 
+            //this is the content to be assigned, to do that, generate it
+            //register that holds the data or a immediate that holds the const or the return from a call
+                
             //generate the first part and get addr of the register
             //for VET or for VAR
             //generate(branch->child[0]);// NEED AN ADDRESS NOT THE CONTENT TO GET THE ADDR, GET THE HOLDER.addr[2,1]
             //holder has the addr for the reg
 
-            //Now, I know that I have to store the content loaded to reg
-            char* result_as = malloc(sizeof(char)*128);
-            snprintf(result_as, 128U, "%s_%s", scope, branch->child[0]->attr.content);
-            uint32_t offset_as = alloc_reg(result_as);
+            if(branch->child[0]->has.exp.kind == VECT_ID_EK)
+            {
+                char* result_vec_as = malloc(sizeof(char)*128);
+                snprintf(result_vec_as, 128U, "%s_%s", scope, branch->child[0]->attr.content);
+                uint32_t offset_vec_as = alloc_reg(result_vec_as);
 
-            // this holds the addr of the variable
-            instruction->address[1].type = REGISTER;
-            instruction->address[1].value = 8;
-            instruction->address[2].type = STR;
-            instruction->address[2].data = result_as;
-            instruction->address[2].value = offset_as;
-            
 
-            //this is the content to be assigned, to do that, generate it
-            generate(branch->child[1]);
-            //register that holds the data or a immediate that holds the const or the return from a call
-            
-            if(holder.type == IMMEDIATE){
-                quadruple* mvi = malloc(sizeof(quadruple));
-                mvi->operation = LOAD_IMMEDIATE;
-                mvi->address[0].type = REGISTER;
-                mvi->address[0].value = reserve_register();
-                mvi->address[1].type = EMPTY;
-                mvi->address[2] = holder;
+                instruction->address[1].value = 8;
+                instruction->address[1].type = REGISTER;
 
-                add_quadruple(mvi);
-                holder = mvi->address[0];
+                instruction->address[2].data = result_vec_as;
+                instruction->address[2].type = STR;
+                instruction->address[2].value = offset_vec_as;
+
+                instruction->operation = LOAD_VAR;
+                instruction->address[0].type = REGISTER;
+                instruction->address[0].value = reserve_register();
+
+                add_quadruple(instruction);
+                
+                //this will have to generate the op to calc the size
+                quadruple* adder_as = malloc(sizeof(quadruple));
+
+                adder_as->address[1]= instruction->address[0];
+
+                //calc the base addr
+                generate(branch->child[0]->child[0]);
+
+                adder_as->address[2] = holder;
+                if(holder.type == IMMEDIATE){
+                    adder_as->operation = ADDI;
+                }else{
+                    adder_as->operation = ADD;
+                }
+                
+                adder_as->address[0].type = REGISTER;
+                adder_as->address[0].value = reserve_register();
+                
+                add_quadruple(adder_as); 
+                
+                free_register(adder_as->address[1].value);
+                if ( adder_as->address[2].type == REGISTER)
+                {
+                    free_register(adder_as->address[2].value);
+                }
+
+                //Where to put is calculated : adder->address[0]
+                
+                //load the vector with the calculated addr
+                quadruple* vect_store = malloc(sizeof(quadruple));
+                //load result register as the operand of the next phase
+                vect_store->address[1]= adder_as->address[0];
+                generate(branch->child[1]);
+
+                if(holder.type == IMMEDIATE){
+                    quadruple* mvi_v = malloc(sizeof(quadruple));
+                    mvi_v->operation = LOAD_IMMEDIATE;
+                    mvi_v->address[0].type = REGISTER;
+                    mvi_v->address[0].value = reserve_register();
+                    mvi_v->address[1].type = EMPTY;
+                    mvi_v->address[2] = holder;
+
+                    add_quadruple(mvi_v);
+                    holder = mvi_v->address[0];
+                }
+
+                vect_store->address[0] = holder;
+                
+                vect_store->address[2].type = EMPTY;
+                vect_store->operation = STORE;
+
+                //get the addr of the referenced vector [base] + [offset]
+                add_quadruple(vect_store);
+                free_register(vect_store->address[1].value);
+
+                // the part where the assign happens
+                
+
+
+            }else {
+
+
+                //Now, I know that I have to store the content loaded to reg
+                char* result_as = malloc(sizeof(char)*128);
+                snprintf(result_as, 128U, "%s_%s", scope, branch->child[0]->attr.content);
+                uint32_t offset_as = alloc_reg(result_as);
+
+                // this holds the addr of the variable
+                instruction->address[1].type = REGISTER;
+                instruction->address[1].value = 8;
+                instruction->address[2].type = STR;
+                instruction->address[2].data = result_as;
+                instruction->address[2].value = offset_as;
+                
+                generate(branch->child[1]);
+
+                if(holder.type == IMMEDIATE){
+                    quadruple* mvi = malloc(sizeof(quadruple));
+                    mvi->operation = LOAD_IMMEDIATE;
+                    mvi->address[0].type = REGISTER;
+                    mvi->address[0].value = reserve_register();
+                    mvi->address[1].type = EMPTY;
+                    mvi->address[2] = holder;
+
+                    add_quadruple(mvi);
+                    holder = mvi->address[0];
+                }
+                instruction->address[0] = holder;
+                // store the content of holder into the address inside the reg [0]
+                instruction->operation = STORE;
+
+                add_quadruple(instruction);
+
+                if(instruction->address[0].type=REGISTER){
+                    free_register(instruction->address[0].value);
+                }
+                if(instruction->address[1].type=REGISTER){
+                    free_register(instruction->address[1].value);
+                }
             }
-            instruction->address[0] = holder;
-            // store the content of holder into the address inside the reg [0]
-            instruction->operation = STORE;
-
-            add_quadruple(instruction);
-
-            if(instruction->address[0].type=REGISTER){
-                free_register(instruction->address[0].value);
-            }
-
             break;
         case VAR_SK:
-        case VECT_SK:
             //this two types dont actually do something in the assembly
             //They are used by the program
+            break;
+        case VECT_SK:
+            // this is the part to alloc,
             break;
         case FUNCT_SK:
             scope = branch->attr.content;
@@ -856,8 +944,6 @@ static address generate_statement( syntax_t_node* branch )
             break;
 
         case PARAM_SK: 
-        case VECT_PARAM_SK:
-
 
             //I have the scope and the var name;
             //now I need to concat the two of them,
@@ -891,6 +977,43 @@ static address generate_statement( syntax_t_node* branch )
             //keep calc
 
             break;
+        case VECT_PARAM_SK:
+
+
+            //I have the scope and the var name;
+            //now I need to concat the two of them,
+            //send this str to a function called alloc_reg
+            //If the str was already sent into this function, it will send the position
+            //the position is an uint that represents the position in the frame pointer,
+            //the position is incremented each time a new str is sent to alloc_reg
+            //a hash table is incremented with the key = the str sent to the alloc_reg, and the value = position;
+            //if the str sent to alloc_reg already is in the hash_table, alloc_reg returns the value, 
+            //if not, it inserts the str as a key and the position as a value 
+            char* result_vect_param = malloc(sizeof(char)*128);
+            snprintf(result_vect_param, 128U, "%s_%s", scope, branch->attr.array_specs.identifier);
+            uint32_t offset_vect_param = alloc_reg(result_vect_param);
+            
+            instruction->operation = STORE;
+            instruction->address[0].type = REGISTER;
+            instruction->address[0].value = 10+parameter_c++;
+            instruction->address[1].type = REGISTER;
+            instruction->address[1].value = 8;
+            instruction->address[2].type = STR;
+            instruction->address[2].data = result_vect_param;
+            instruction->address[2].value = offset_vect_param;
+
+            
+
+            add_quadruple(instruction);
+            //add to sp, for it not to interfere with this local var
+
+            //in epilogue, add a new counter variable with an add
+            //add an instruction that finishes being complete in the epilogue, add it even though not have value to add yet, this is local vars ref
+            //keep calc
+
+            break;
+
+
     }
 
 }
