@@ -6,6 +6,8 @@ int gcd (int u, int v)
         return u ;
     }else
     {
+        output(u);
+        output(v);
         return gcd(v, u-u/v*v) ;
     }
  /* u-u;v*v == u mod v */

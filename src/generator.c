@@ -834,17 +834,24 @@ static address generate_statement( syntax_t_node* branch )
             instruction->address[2].data= (*(hash_find(branch->attr.content))).data;
             
             add_quadruple(instruction);
+            
+            if(strcmp(instruction->address[2].data, "output") == 0)
+            {
 
-            quadruple* pop_ret = malloc(sizeof(quadruple));
-            pop_ret->operation = MOVE;
-            pop_ret->address[0].type= REGISTER;
-            pop_ret->address[0].value=reserve_register();
-            pop_ret->address[1].type = REGISTER;
-            pop_ret->address[1].value= 10;
-            pop_ret->address[2].type = EMPTY;
-            add_quadruple(pop_ret);
+            }else
+            {
+                quadruple* pop_ret = malloc(sizeof(quadruple));
+                pop_ret->operation = MOVE;
+                pop_ret->address[0].type= REGISTER;
+                pop_ret->address[0].value=reserve_register();
+                pop_ret->address[1].type = REGISTER;
+                pop_ret->address[1].value= 10;
+                pop_ret->address[2].type = EMPTY;
+                add_quadruple(pop_ret);
 
-            holder = pop_ret->address[0];
+                holder = pop_ret->address[0];
+            }
+            
 
             break;
 
