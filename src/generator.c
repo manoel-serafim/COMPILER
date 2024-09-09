@@ -3,6 +3,81 @@
 
 
 
+//printer section
+
+const char* operation_strings[] = {
+    "LOAD_VAR",
+    "LOAD_VECT",
+    "BRANCH_IF",
+    "BRANCH",
+    "LABEL",
+    "MOVE",
+    "PUSH",
+    "POP",
+    "BRANCH_AND_LINK",
+    "STORE",
+    "PLUS_ALOP",
+    "MINUS_ALOP",
+    "MULT_PRE_ALOP",
+    "DIV_PRE_ALOP",
+    "EQ_RELOP",
+    "NOTEQ_RELOP",
+    "LESSEQ_RELOP",
+    "GREATEQ_RELOP",
+    "GREAT_RELOP",
+    "LESS_RELOP",
+    "RET",
+    "LOAD_IMMEDIATE",
+    "ADDI",
+    "GLOB_MAIN"
+};
+
+void print_address(address addr) {
+    switch (addr.type) {
+        case LOCATION:
+            printf(", %s", addr.data);
+            break;
+        case STR:
+            printf(", %s", addr.data);
+            break;
+        case REGISTER:
+            printf(", R%d", addr.value);
+            break;
+        case IMMEDIATE:
+            printf(", %d", addr.value);
+            break;
+        case EMPTY:
+            printf(", _");
+            break;
+        default:
+            printf("Unknown Address Type");
+            break;
+    }
+}
+
+void print_quadruple(quadruple* quad) {
+    printf("%u::\t", quad->location);
+    printf("%s", operation_strings[quad->operation - LOAD_VAR]);
+    for (int i = 0; i < 3; ++i) {
+            
+        print_address(quad->address[i]);
+       
+    }
+    printf("\n");
+        
+    
+}
+
+void print_quadruple_linked_list(quadruple init) {
+    quadruple* current = &init;
+
+    while (current != NULL) {
+        print_quadruple(current);
+        current = current->next;
+    }
+}
+
+
 // Define the hash table structure
 #define HASH_SIZE 211 // Size of the hash table
 
@@ -128,6 +203,9 @@ unsigned int alloc_reg(const char* str) {
 
 
 
+
+
+
 quadruple start;
 quadruple* head = &start;
 address holder;
@@ -148,23 +226,55 @@ uint parameter_c = 0;
     0x1c: 0000
 
 */ 
-uint32_t register_status = 0xe0bfc000;
+uint32_t register_status = 0xe0bfc000 | 0x00001f00;
+
+/*
+    0x00: 0000
+    0x04: 0000 
+    0x08: 0000
+    0x0c: 0000
+    0x10: 0001
+    0x14: 1111 
+    0x18: 0000
+    0x1c: 0000
+
+*/ 
+uint32_t unalt_saved_regs = 0xffffe0ff;
 #define SET_BIT(num, pos) ((num) |= (1u << (pos)))
 #define RESET_BIT(num, pos) ((num) &= ~(1u << (pos)))
 
 
 
 static inline int free_register(uint position){
+    
     RESET_BIT(register_status, position);
-    register_status = register_status | 0xe0bfc000;
+    register_status = register_status | 0xe0bfc000 | 0x00001f00;
+}
+
+static inline int free_saved_register(uint position){
+    RESET_BIT(unalt_saved_regs, position);
+    unalt_saved_regs = unalt_saved_regs | 0xffffe0ff;
 }
 
 uint8_t reserve_register(){
-
+    
     uint8_t i;
     for (i = 31; i >= 0; i--) {
         if (!(register_status & (1u << i))) {
             SET_BIT(register_status, i);
+            return i;
+        }
+    }
+    return -1;
+
+}
+
+uint8_t reserve_saved_register(){
+
+    uint8_t i;
+    for (i = 31; i >= 0; i--) {
+        if (!(unalt_saved_regs & (1u << i))) {
+            SET_BIT(unalt_saved_regs, i);
             return i;
         }
     }
@@ -192,10 +302,7 @@ const int inverse_relation[] = {
 };
 static quadruple* generate_expression(syntax_t_node* branch)
 {
-
     quadruple* instruction = malloc(sizeof(quadruple));
-
-
     switch(branch->has.exp.kind)
     {
         case OP_EK:
@@ -209,7 +316,7 @@ static quadruple* generate_expression(syntax_t_node* branch)
                 quadruple* mvi1 = malloc(sizeof(quadruple));
                 mvi1->operation = LOAD_IMMEDIATE;
                 mvi1->address[0].type = REGISTER;
-                mvi1->address[0].value = reserve_register();
+                mvi1->address[0].value = reserve_saved_register();
                 mvi1->address[1].type = EMPTY;
                 mvi1->address[2] = holder;
 
@@ -227,7 +334,7 @@ static quadruple* generate_expression(syntax_t_node* branch)
                 quadruple* mvi2 = malloc(sizeof(quadruple));
                 mvi2->operation = LOAD_IMMEDIATE;
                 mvi2->address[0].type = REGISTER;
-                mvi2->address[0].value = reserve_register();
+                mvi2->address[0].value = reserve_saved_register();
                 mvi2->address[1].type = EMPTY;
                 mvi2->address[2] = holder;
 
@@ -261,10 +368,10 @@ static quadruple* generate_expression(syntax_t_node* branch)
 
             //if one of the registers of operand where used, now we can free them
             if(instruction->address[1].type == REGISTER){
-                free_register(instruction->address[1].value);
+                free_saved_register(instruction->address[1].value);
             }
             if(instruction->address[2].type == REGISTER){
-                free_register(instruction->address[2].value);
+                free_saved_register(instruction->address[2].value);
             }
 
             add_quadruple(instruction);
@@ -331,7 +438,30 @@ static quadruple* generate_expression(syntax_t_node* branch)
 
             //calc the base addr
             generate(branch->child[0]);
+            /*
+            printf("%x\n", register_status);
+            
+            
+            quadruple* li4 = malloc(sizeof(quadruple));
+            li4->address[1].type = EMPTY;
+            li4->address[2].type = IMMEDIATE;
+            li4->address[2].value = 4;
+            li4->operation = LOAD_IMMEDIATE;
+            li4->address[0].type = REGISTER;
+            
+            li4->address[0].value = reserve_register();
+            add_quadruple(li4); 
 
+            quadruple* multind = malloc(sizeof(quadruple));
+            multind->address[1].value = li4->address[0].value;
+            multind->address[1].type = REGISTER;
+            multind->address[2] = holder;
+            multind->operation = MULT;
+            multind->address[0].type = REGISTER;
+            multind->address[0].value = reserve_register();
+            add_quadruple(multind); 
+            free_register(multind->address[1].value);
+*/
             adder->address[2] = holder;
             adder->operation = ADD;
             adder->address[0].type = REGISTER;
@@ -405,12 +535,15 @@ static address generate_statement( syntax_t_node* branch )
 
             //instruction that will branch to the else or to the finish if e1 is false
             instruction->operation = BRANCH_IF;
+            
 
             //no use
             instruction->address[0].type = EMPTY;
             
             //The instruction can be added even if not finished yet (pointer magic)
             add_quadruple(instruction);
+           
+            
             //free reg for reuse
             if(instruction->address[1].type == REGISTER){
                 free_register(instruction->address[1].value);
@@ -582,6 +715,22 @@ static address generate_statement( syntax_t_node* branch )
                 push_return_value->operation = MOVE; 
                 push_return_value->address[0].type = REGISTER;
                 push_return_value->address[0].value = 10;
+                if(holder.type == IMMEDIATE && holder.value != 0)
+                {
+                    quadruple* mvi_vi = malloc(sizeof(quadruple));
+                    mvi_vi->operation = LOAD_IMMEDIATE;
+                    mvi_vi->address[0].type = REGISTER;
+                    mvi_vi->address[0].value = reserve_register();
+                    mvi_vi->address[1].type = EMPTY;
+                    mvi_vi->address[2] = holder;
+
+                    add_quadruple(mvi_vi);
+                    holder = mvi_vi->address[0];
+                    
+                }
+                else{
+                    free_register(holder.value);
+                }
                 push_return_value->address[1] = holder;
                 push_return_value->address[2].type = EMPTY;
                 add_quadruple(push_return_value);
@@ -652,6 +801,7 @@ static address generate_statement( syntax_t_node* branch )
                 {
                     free_register(adder_as->address[2].value);
                 }
+                free_register(adder_as->address[1].value);
 
                 //Where to put is calculated : adder->address[0]
                 
@@ -680,6 +830,10 @@ static address generate_statement( syntax_t_node* branch )
 
                 //get the addr of the referenced vector [base] + [offset]
                 add_quadruple(vect_store);
+
+                free_register(vect_store->address[0].value);
+                
+                
                 free_register(vect_store->address[1].value);
 
                 // the part where the assign happens
@@ -688,12 +842,14 @@ static address generate_statement( syntax_t_node* branch )
 
             }else {
 
-
-                //Now, I know that I have to store the content loaded to reg
                 char* result_as = malloc(sizeof(char)*128);
-                snprintf(result_as, 128U, "%s_%s", scope, branch->child[0]->attr.content);
+                snprintf(result_as, 128U, "%s_%s", "global", branch->child[0]->attr.content);
+                //Now, I know that I have to store the content loaded to reg
+                int pos = find_in__loc_var_hash_table(result_as);
+                if(pos == -1){
+                    snprintf(result_as, 128U, "%s_%s", scope, branch->child[0]->attr.content);
+                }
                 uint32_t offset_as = alloc_reg(result_as);
-
                 // this holds the addr of the variable
                 instruction->address[1].type = REGISTER;
                 instruction->address[1].value = 8;
@@ -734,6 +890,69 @@ static address generate_statement( syntax_t_node* branch )
             break;
         case VECT_SK:
             // this is the part to alloc,
+            
+            if(strcmp(scope, "global")==0){
+                //add to .data
+                char* glob_c = malloc(sizeof(char)*128);
+                //root->attr.array_specs.identifier,
+                // root->attr.array_specs.size
+                snprintf(glob_c, 128U, "%s_%s", "global", branch->attr.content);
+                uint32_t offset_glob = alloc_reg(glob_c);
+                local_var_count-=4;
+                //DATA_SECT
+                //.data
+
+            }else{
+
+                /*alloc spaces on the stack, then, send the sp start to the init
+                send the sp to the funct_var by alloc var
+                alloc spaces for variables stacking
+                mv stack start to the top*/
+
+                char* result_vect_dcl = malloc(sizeof(char)*128);
+                uint32_t offset_vect_dcl;
+
+                for(int index = 0; index < branch->attr.array_specs.size; index++)
+                {
+                    snprintf(result_vect_dcl, 128U, "%s_%s_%d", scope, branch->attr.array_specs.identifier, index);
+                    offset_vect_dcl = alloc_reg(result_vect_dcl);
+                }
+                snprintf(result_vect_dcl, 128U, "%s_%s", scope, branch->attr.array_specs.identifier);
+                offset_vect_dcl = alloc_reg(result_vect_dcl);
+
+                quadruple* fpoff = malloc(sizeof(quadruple));
+                fpoff->operation= ADDI;
+                fpoff->address[0].type = REGISTER;
+                fpoff->address[0].value = reserve_register();
+                fpoff->address[1].type = REGISTER;
+                fpoff->address[1].value = 8;
+                fpoff->address[2].type = IMMEDIATE;
+                fpoff->address[2].value = -(offset_vect_dcl*4);
+                add_quadruple(fpoff);
+                
+                instruction->operation = STORE;
+                instruction->address[0].type = REGISTER;
+                instruction->address[0].value = fpoff->address[0].value; // Need to contain s0+offsetinit
+
+
+                instruction->address[1].type = REGISTER;
+                instruction->address[1].value = 8;
+                instruction->address[2].type = STR;
+                instruction->address[2].data = result_vect_dcl;
+                instruction->address[2].value = offset_vect_dcl;
+                add_quadruple(instruction);
+                free_register(fpoff->address[0].value);
+
+                
+                //add to sp, for it not to interfere with this local var
+
+                //in epilogue, add a new counter variable with an add
+                //add an instruction that finishes being complete in the epilogue, add it even though not have value to add yet, this is local vars ref
+                //keep calc
+
+                
+                }
+            
             break;
         case FUNCT_SK:
             scope = branch->attr.content;
@@ -863,7 +1082,7 @@ static address generate_statement( syntax_t_node* branch )
             scope = "global";
 
             //clean all registers for reuse
-            register_status = 0xe0bfc000;
+            register_status = 0xe0bfc000 | 0x00001f00;
             break;
 
         case CALL_SK:
@@ -1021,7 +1240,7 @@ static address generate_statement( syntax_t_node* branch )
 
 
 quadruple* generate(syntax_t_node* syntax_root){
-
+    
     if(syntax_root != NULL)
     {        
         /*switch case here*/
@@ -1041,79 +1260,6 @@ quadruple* generate(syntax_t_node* syntax_root){
 }
 
 
-//printer section
-
-const char* operation_strings[] = {
-    "LOAD_VAR",
-    "LOAD_VECT",
-    "BRANCH_IF",
-    "BRANCH",
-    "LABEL",
-    "MOVE",
-    "PUSH",
-    "POP",
-    "BRANCH_AND_LINK",
-    "STORE",
-    "PLUS_ALOP",
-    "MINUS_ALOP",
-    "MULT_PRE_ALOP",
-    "DIV_PRE_ALOP",
-    "EQ_RELOP",
-    "NOTEQ_RELOP",
-    "LESSEQ_RELOP",
-    "GREATEQ_RELOP",
-    "GREAT_RELOP",
-    "LESS_RELOP",
-    "RET",
-    "LOAD_IMMEDIATE",
-    "ADDI",
-    "GLOB_MAIN"
-};
-
-void print_address(address addr) {
-    switch (addr.type) {
-        case LOCATION:
-            printf(", %s", addr.data);
-            break;
-        case STR:
-            printf(", %s", addr.data);
-            break;
-        case REGISTER:
-            printf(", R%d", addr.value);
-            break;
-        case IMMEDIATE:
-            printf(", %d", addr.value);
-            break;
-        case EMPTY:
-            printf(", _");
-            break;
-        default:
-            printf("Unknown Address Type");
-            break;
-    }
-}
-
-void print_quadruple(quadruple* quad) {
-    printf("%u::\t", quad->location);
-    printf("%s", operation_strings[quad->operation - LOAD_VAR]);
-    for (int i = 0; i < 3; ++i) {
-            
-        print_address(quad->address[i]);
-       
-    }
-    printf("\n");
-        
-    
-}
-
-void print_quadruple_linked_list(quadruple init) {
-    quadruple* current = &init;
-
-    while (current != NULL) {
-        print_quadruple(current);
-        current = current->next;
-    }
-}
 
 void init_generation(syntax_t_node *  root){
     

@@ -31,7 +31,9 @@ void sort ( int a[], int low, int high)
 
 void main(void)
 { int i;
- int x[10];
+ int a;
+ int b,
+ int c,
  i = 4;
  while(i < 10)
    { x[i] = input();

@@ -1,0 +1,19 @@
+int fatorial ( int n)
+{
+    if(n == 1)
+        return 1;
+    else
+    {
+        return fatorial (n -1)* n ;
+    }
+ }
+
+ int main ( void )
+ {
+    int n;
+    int fat ;
+    n = input () ;
+    fat = fatorial (n);
+    output ( fat );
+    return 0;
+ }
